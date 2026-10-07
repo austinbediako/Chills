@@ -10,20 +10,16 @@ const RegisterForm: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    username: '',
     password: '',
     confirmPassword: '',
-    gender: '',
   });
   
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({
     name: '',
     email: '',
-    username: '',
     password: '',
     confirmPassword: '',
-    gender: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -52,15 +48,6 @@ const RegisterForm: React.FC = () => {
       isValid = false;
     }
     
-    // Validate username
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-      isValid = false;
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
-      isValid = false;
-    }
-    
     // Validate email
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
@@ -85,12 +72,6 @@ const RegisterForm: React.FC = () => {
       isValid = false;
     }
 
-   // Validate gender
-   if (!formData.gender) {
-    newErrors.gender = 'Gender is required';
-    isValid = false;
-  }
-
   setErrors(newErrors);
   return isValid;
 };
@@ -102,16 +83,19 @@ const handleSubmit = async (e: React.FormEvent) => {
     return;
   }
 
+  // Generate a pending username to flag that it hasn't been properly set yet
+  const generatedUsername = `pending-${Math.random().toString(36).substring(2, 15)}`;
+
   const success = await registerUser(
     formData.name,
     formData.email,
-    formData.username,
+    generatedUsername,
     formData.password,
-    formData.gender
+    'other' // Default gender
   );
 
   if (success) {
-    navigate('/');
+    navigate('/onboarding');
   }
 };
 
@@ -141,25 +125,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
       </div>
       
-      {/* Username field */}
-      <div>
-        <label htmlFor="username" className="mb-1 block text-sm font-medium text-dark-100 dark:text-light-100">
-          Username
-        </label>
-        <div className="relative">
-          <input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            className={`input pl-10 w-full ${errors.username ? 'border-red-500 dark:border-red-500' : ''}`}
-            placeholder="Choose a username"
-          />
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400 dark:text-light-400" size={18} />
-        </div>
-        {errors.username && <p className="mt-1 text-sm text-red-500">{errors.username}</p>}
-      </div>
+
       
       {/* Email field */}
       <div>
@@ -228,27 +194,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}
       </div>
 
-      {/* Gender field */}
-      <div>
-        <label htmlFor="gender" className="mb-1 block text-sm font-medium text-dark-100 dark:text-light-100">
-          Gender
-        </label>
-        <div className="relative">
-          <select
-            id="gender"
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-            className={`input pl-10 w-full ${errors.gender ? 'border-red-500 dark:border-red-500' : ''}`}
-          >
-            <option value="">Select your gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender}</p>}
-      </div>
+
       
       {/* Terms and conditions */}
       <div className="flex items-start">

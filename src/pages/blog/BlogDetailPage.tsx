@@ -1,34 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, User, Heart, Bookmark, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { usePosts } from '../../hooks/usePosts';
+import { Calendar, Clock, User, Heart, Bookmark, ChevronLeft, CheckCircle, XCircle, Repeat, CornerDownRight } from 'lucide-react';
+import axios from 'axios';
+import { useSubmissions } from '../../hooks/useSubmissions';
 import { useComments } from '../../hooks/useComments';
-import { useAuth } from '../../hooks/useAuth'; // Ensure this import is correct
+import { useAuth } from '../../hooks/useAuth';
 import CommentForm from '../../components/forms/CommentForm';
+import BookmarkDropdown from '../../components/common/BookmarkDropdown';
+import '../../styles/article.css';
 
 const BlogDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { post, loading, error, getPostById, likePostById, removePost } = usePosts();
+  const { submission, loading, error, getSubmissionById, interactSubmission, reviewSubmission } = useSubmissions();
   const { comments, getComments } = useComments();
-  const { user, isAuthenticated } = useAuth(); // This is where user is defined
+  const { user, isAuthenticated } = useAuth();
   
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isReposted, setIsReposted] = useState(false);
+  const [repostsCount, setRepostsCount] = useState(0);
+  const [replyInputOpen, setReplyInputOpen] = useState<{ [commentId: string]: boolean }>({});
+  const [replyText, setReplyText] = useState<{ [commentId: string]: string }>({});
 
   useEffect(() => {
     if (slug) {
-      getPostById(slug);
+      getSubmissionById(slug);
     }
-  }, [slug, getPostById]);
+  }, [slug, getSubmissionById]);
 
   useEffect(() => {
-    if (post) {
-      getComments(post._id);
+    if (submission) {
+      getComments(submission._id);
+      if (submission.repostsCount !== undefined) {
+        setRepostsCount(submission.repostsCount);
+      }
     }
-  }, [post, getComments]);
+  }, [submission, getComments]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
@@ -36,34 +45,102 @@ const BlogDetailPage: React.FC = () => {
       return;
     }
     
-    if (post) {
-      await likePostById(post._id);
-      setIsLiked(true);
+    if (submission) {
+      await interactSubmission(submission._id, 'LIKE');
+      setIsLiked(!isLiked); // Optimistic UI toggle, actual count is handled in redux
     }
   };
 
-  const handleBookmark = () => {
+  const handleBookmark = async () => {
     if (!isAuthenticated) {
       navigate('/auth/login');
       return;
     }
     
-    setIsBookmarked(!isBookmarked);
+    if (submission) {
+      await interactSubmission(submission._id, 'BOOKMARK');
+      setIsBookmarked(!isBookmarked);
+    }
   };
 
-  const handleDelete = async () => {
-    if (post) {
-      const success = await removePost(post._id);
-      if (success) {
-        navigate('/blog');
+  const handleRepost = async () => {
+    if (!isAuthenticated) {
+      navigate('/auth/login');
+      return;
+    }
+
+    if (submission) {
+      try {
+        const token = user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');
+        const res = await axios.post(
+          `/api/submissions/${submission._id}/repost`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setIsReposted(Boolean(res.data.isReposted));
+        setRepostsCount(res.data.repostsCount ?? (isReposted ? Math.max(0, repostsCount - 1) : repostsCount + 1));
+      } catch (err) {
+        console.error('Error reposting story:', err);
       }
     }
   };
 
-  // Safe author checks with optional chaining
-  const isAuthor = user && post && user._id === post.author?._id;
+  const handleLikeComment = async (commentId: string) => {
+    if (!isAuthenticated) {
+      navigate('/auth/login');
+      return;
+    }
+    try {
+      const token = user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');
+      await axios.post(`/api/comments/${commentId}/like`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (submission) {
+        getComments(submission._id);
+      }
+    } catch (err) {
+      console.error('Error liking comment:', err);
+    }
+  };
+
+  const handleSendReply = async (commentId: string) => {
+    if (!isAuthenticated) {
+      navigate('/auth/login');
+      return;
+    }
+    const content = (replyText[commentId] || '').trim();
+    if (!content) return;
+    try {
+      const token = user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');
+      await axios.post(
+        `/api/comments/${commentId}/replies`,
+        { content },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setReplyText((prev) => ({ ...prev, [commentId]: '' }));
+      setReplyInputOpen((prev) => ({ ...prev, [commentId]: false }));
+      if (submission) {
+        getComments(submission._id);
+      }
+    } catch (err) {
+      console.error('Error adding reply:', err);
+    }
+  };
+
+  const handleReviewAction = async (status: string) => {
+    if (submission) {
+      // In a real app, you'd open a modal to get review notes
+      const success = await reviewSubmission(submission._id, status, "Automated review action from UI");
+      if (success) {
+        getSubmissionById(slug!);
+      }
+    }
+  };
+
+  const isAuthor = user && submission && user._id === submission.author?._id;
   const isAdmin = user?.role === 'admin';
-  const canEdit = isAuthor || isAdmin;
+  const isReviewer = user?.role === 'reviewer' || isAdmin;
+  const canEdit = (isAuthor && submission?.status !== 'PUBLISHED' && submission?.status !== 'PENDING_REVIEW') || isAdmin;
 
   if (loading) {
     return (
@@ -77,24 +154,24 @@ const BlogDetailPage: React.FC = () => {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mb-4">
-          Error Loading Post
+          Error Loading Document
         </h2>
         <p className="text-dark-300 dark:text-light-300 mb-6">{error}</p>
-        <Link to="/blog" className="btn btn-primary">Back to Blog</Link>
+        <Link to="/blog" className="btn btn-primary">Back to Repository</Link>
       </div>
     );
   }
 
-  if (!post) {
+  if (!submission) {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mb-4">
-          Post Not Found
+          Document Not Found
         </h2>
         <p className="text-dark-300 dark:text-light-300 mb-6">
-          The article you're looking for doesn't exist or has been removed.
+          The document you're looking for doesn't exist or has been removed.
         </p>
-        <Link to="/blog" className="btn btn-primary">Back to Blog</Link>
+        <Link to="/blog" className="btn btn-primary">Back to Repository</Link>
       </div>
     );
   }
@@ -105,49 +182,61 @@ const BlogDetailPage: React.FC = () => {
       <div className="mb-6 flex items-center text-sm text-dark-400 dark:text-light-400">
         <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400">Home</Link>
         <span className="mx-2">/</span>
-        <Link to="/blog" className="hover:text-primary-600 dark:hover:text-primary-400">Blog</Link>
+        <Link to="/explore" className="hover:text-primary-600 dark:hover:text-primary-400">Repository</Link>
         <span className="mx-2">/</span>
         <Link 
-          to={`/categories/${post.category?.toLowerCase() || 'uncategorized'}`} 
+          to={`/explore?category=${encodeURIComponent(submission.category?.name || '')}`} 
           className="hover:text-primary-600 dark:hover:text-primary-400"
         >
-          {post.category || 'Uncategorized'}
+          {submission.category?.name || 'Uncategorized'}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-dark-300 dark:text-light-300 truncate">{post.title}</span>
+        <span className="text-dark-300 dark:text-light-300 truncate">{submission.title}</span>
       </div>
 
       {/* Article Header */}
       <header className="mb-8">
-        <Link
-          to={`/categories/${post.category?.toLowerCase() || 'uncategorized'}`}
-          className="inline-block mb-4 rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-        >
-          {post.category || 'Uncategorized'}
-        </Link>
+        <div className="flex justify-between items-start mb-4">
+          <Link
+            to={`/explore?category=${encodeURIComponent(submission.category?.name || '')}`}
+            className="inline-block rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 hover:bg-primary-200 transition-colors"
+          >
+            {submission.category?.name || 'Uncategorized'}
+          </Link>
+          
+          <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+            submission.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
+            submission.status === 'PENDING_REVIEW' ? 'bg-yellow-100 text-yellow-800' :
+            submission.status === 'REVISIONS_REQUESTED' ? 'bg-orange-100 text-orange-800' :
+            'bg-gray-100 text-gray-800'
+          }`}>
+            {submission.status}
+          </span>
+        </div>
+        
         <h1 className="text-3xl font-bold font-heading sm:text-4xl md:text-5xl text-dark-100 dark:text-light-100 mb-6">
-          {post.title}
+          {submission.title}
         </h1>
         <div className="flex flex-wrap items-center gap-4 text-dark-400 dark:text-light-400">
           <div className="flex items-center">
             <img
-              src={post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'Anonymous')}`}
-              alt={post.author?.name || 'Post author'}
+              src={submission.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(submission.author?.name || 'Anonymous')}`}
+              alt={submission.author?.name || 'Author'}
               className="h-10 w-10 rounded-full mr-3"
             />
             <div>
               <Link 
-                to={`/authors/${post.author?.username || 'anonymous'}`} 
+                to={`/authors/${submission.author?.username || 'anonymous'}`} 
                 className="font-medium text-dark-100 dark:text-light-100 hover:text-primary-600 dark:hover:text-primary-400"
               >
-                {post.author?.name || 'Anonymous Author'}
+                {submission.author?.name || 'Anonymous Author'}
               </Link>
             </div>
           </div>
           <div className="flex items-center">
             <Calendar size={16} className="mr-1" />
             <span>
-              {new Date(post.createdAt).toLocaleDateString('en-US', { 
+              {new Date(submission.createdAt).toLocaleDateString('en-US', { 
                 month: 'long', 
                 day: 'numeric', 
                 year: 'numeric' 
@@ -156,59 +245,65 @@ const BlogDetailPage: React.FC = () => {
           </div>
           <div className="flex items-center">
             <Clock size={16} className="mr-1" />
-            <span>{post.readTime || 'No read time'}</span>
+            <span>{submission.readTime || 'No read time'}</span>
           </div>
-          
-          {canEdit && (
-            <div className="flex items-center ml-auto">
-              <Link
-                to={`/blog/edit/${post._id}`}
-                className="flex items-center rounded-md p-2 text-dark-400 hover:bg-light-200 hover:text-primary-600 dark:text-light-400 dark:hover:bg-dark-200 dark:hover:text-primary-400 mr-2"
-                title="Edit post"
-              >
-                <Edit size={18} />
-              </Link>
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="flex items-center rounded-md p-2 text-dark-400 hover:bg-light-200 hover:text-red-600 dark:text-light-400 dark:hover:bg-dark-200 dark:hover:text-red-400"
-                title="Delete post"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          )}
         </div>
       </header>
+
+      {/* Reviewer Action Panel */}
+      {isReviewer && submission.status === 'PENDING_REVIEW' && (
+        <div className="mb-8 p-4 border border-yellow-200 bg-yellow-50 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-700/50">
+          <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400 mb-2">Reviewer Actions</h3>
+          <p className="text-sm text-yellow-700 dark:text-yellow-500 mb-4">You have permission to review this pending document.</p>
+          <div className="flex gap-3">
+            <button onClick={() => handleReviewAction('PUBLISHED')} className="btn bg-green-600 text-white hover:bg-green-700 flex items-center">
+              <CheckCircle size={16} className="mr-2" /> Approve & Publish
+            </button>
+            <button onClick={() => handleReviewAction('REVISIONS_REQUESTED')} className="btn bg-orange-500 text-white hover:bg-orange-600 flex items-center">
+              <Edit size={16} className="mr-2" /> Request Revisions
+            </button>
+            <button onClick={() => handleReviewAction('REJECTED')} className="btn bg-red-600 text-white hover:bg-red-700 flex items-center">
+              <XCircle size={16} className="mr-2" /> Reject
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Featured Image */}
       <div className="mb-8 overflow-hidden rounded-xl">
         <img
-          src={post.image || '/default-post-image.jpg'}
-          alt={post.title}
+          src={submission.image || 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80'}
+          alt={submission.title}
           className="h-auto w-full object-cover"
         />
       </div>
 
-      {/* Article Content */}
+      {/* Abstract */}
+      <div className="mb-8 p-6 bg-light-200 dark:bg-dark-200 rounded-xl italic border-l-4 border-primary-500 text-dark-300 dark:text-light-300">
+        <h4 className="font-bold font-heading mb-2 not-italic">Abstract</h4>
+        {submission.abstract}
+      </div>
+
+      {/* Article Content — uses shared kblog-article renderer */}
       <motion.article
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-heading prose-headings:font-bold prose-a:text-primary-600 dark:prose-a:text-primary-400 prose-img:rounded-xl mb-8"
-        dangerouslySetInnerHTML={{ __html: post.content }}
+        className="kblog-article text-dark-100 dark:text-light-100 mb-8"
+        dangerouslySetInnerHTML={{ __html: submission.content }}
       />
 
       {/* Tags */}
       <div className="mb-8">
-        <h3 className="text-lg font-bold font-heading text-dark-100 dark:text-light-100 mb-3">Tags</h3>
+        <h3 className="text-lg font-bold font-heading text-dark-100 dark:text-light-100 mb-3">Keywords / Tags</h3>
         <div className="flex flex-wrap gap-2">
-          {post.tags?.map((tag) => (
+          {submission.tags?.map((tag) => (
             <Link
               key={tag}
-              to={`/tags/${tag?.toLowerCase().replace(/\s+/g, '-')}`}
-              className="rounded-full bg-light-200 px-3 py-1 text-sm text-dark-500 hover:bg-primary-100 hover:text-primary-700 dark:bg-dark-300 dark:text-light-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400"
+              to={`/explore?tag=${encodeURIComponent(tag)}`}
+              className="rounded-full bg-light-200 px-3 py-1 text-sm font-medium text-dark-500 hover:bg-primary-100 hover:text-primary-700 dark:bg-dark-300 dark:text-light-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 transition-colors"
             >
-              {tag}
+              #{tag}
             </Link>
           ))}
         </div>
@@ -216,20 +311,33 @@ const BlogDetailPage: React.FC = () => {
 
       {/* Author Bio */}
       <div className="mb-12 rounded-xl bg-light-200 p-6 dark:bg-dark-200">
-        <div className="flex flex-col sm:flex-row sm:items-center">
-          <img
-            src={post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'Anonymous')}`}
-            alt={post.author?.name || 'Post author'}
-            className="h-20 w-20 rounded-full mb-4 sm:mb-0 sm:mr-6"
-          />
-          <div>
-            <h3 className="text-xl font-bold font-heading text-dark-100 dark:text-light-100 mb-2">
-              {post.author?.name || 'Anonymous Author'}
-            </h3>
-            <p className="text-dark-300 dark:text-light-300 mb-4">
-              {post.author?.bio || `Author of articles about ${post.category || 'various topics'}.`}
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center">
+            <Link to={`/authors/${submission.author?.username || 'anonymous'}`}>
+              <img
+                src={submission.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(submission.author?.name || 'Anonymous')}`}
+                alt={submission.author?.name || 'Author'}
+                className="h-20 w-20 rounded-full mr-6 object-cover ring-2 ring-primary-500/20 hover:scale-105 transition-transform"
+              />
+            </Link>
+            <div>
+              <Link 
+                to={`/authors/${submission.author?.username || 'anonymous'}`}
+                className="text-xl font-bold font-heading text-dark-100 dark:text-light-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              >
+                {submission.author?.name || 'Anonymous Author'}
+              </Link>
+              <p className="text-dark-300 dark:text-light-300 mt-1 max-w-lg font-serif text-sm">
+                {submission.author?.bio || `Contributing author on KBlog.`}
+              </p>
+            </div>
           </div>
+          <Link
+            to={`/authors/${submission.author?.username || 'anonymous'}`}
+            className="btn btn-outline rounded-full text-xs font-semibold px-4 py-2 self-start sm:self-auto shrink-0"
+          >
+            View Author Profile
+          </Link>
         </div>
       </div>
 
@@ -244,33 +352,41 @@ const BlogDetailPage: React.FC = () => {
             }`}
           >
             <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
-            <span>{isLiked ? (post.likes || 0) + 1 : post.likes || 0} likes</span>
+            <span>{submission.likesCount || 0} Appreciations</span>
           </button>
           <button
-            onClick={handleBookmark}
-            className={`flex items-center space-x-2 rounded-full px-4 py-2 ${
-              isBookmarked ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' 
-              : 'bg-light-200 text-dark-500 hover:bg-primary-100 hover:text-primary-700 dark:bg-dark-300 dark:text-light-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400'
+            onClick={handleRepost}
+            className={`flex items-center space-x-2 rounded-full px-4 py-2 transition-colors ${
+              isReposted
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-semibold'
+                : 'bg-light-200 text-dark-500 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-dark-300 dark:text-light-300 dark:hover:bg-emerald-950/30'
             }`}
           >
-            <Bookmark size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
-            <span>Save</span>
+            <Repeat size={18} />
+            <span>{repostsCount} Reposts</span>
           </button>
+          <BookmarkDropdown
+            submissionId={submission._id}
+            isBookmarked={isBookmarked}
+            onBookmarkChange={(next) => setIsBookmarked(next)}
+            showLabel={true}
+            size={18}
+          />
         </div>
       </div>
 
       {/* Comments Section */}
       <div className="mb-12">
         <h2 className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mb-6">
-          Comments ({comments.length})
+          Discussion ({comments.length})
         </h2>
         
         {isAuthenticated ? (
-          <CommentForm postId={post._id} />
+          <CommentForm submissionId={submission._id} />
         ) : (
           <div className="mb-8 p-6 bg-light-200 dark:bg-dark-200 rounded-lg text-center">
             <p className="text-dark-300 dark:text-light-300 mb-4">
-              Please sign in to leave a comment.
+              Please sign in to join the discussion.
             </p>
             <Link to="/auth/login" className="btn btn-primary">Sign In</Link>
           </div>
@@ -282,32 +398,111 @@ const BlogDetailPage: React.FC = () => {
               <div key={comment._id} className="rounded-xl bg-light-200 p-6 dark:bg-dark-200">
                 <div className="mb-4 flex items-start justify-between">
                   <div className="flex items-center">
-                    <img
-                      src={comment.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'Anonymous')}`}
-                      alt={comment.user?.name || 'Comment author'}
-                      className="h-10 w-10 rounded-full mr-3"
-                    />
-                    <div>
-                      <h4 className="font-medium text-dark-100 dark:text-light-100">
-                        {comment.user?.name || 'Anonymous'}
-                      </h4>
-                      <p className="text-sm text-dark-400 dark:text-light-400">
-                        {new Date(comment.createdAt).toLocaleDateString('en-US', { 
-                          month: 'long', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}
-                      </p>
-                    </div>
+                    <Link 
+                      to={`/authors/${comment.user?.username || comment.user?._id || 'anonymous'}`}
+                      className="flex items-center group"
+                    >
+                      <img
+                        src={comment.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'Anonymous')}`}
+                        alt={comment.user?.name || 'Comment author'}
+                        className="h-10 w-10 rounded-full mr-3 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div>
+                        <h4 className="font-medium text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                          {comment.user?.name || 'Anonymous'}
+                        </h4>
+                        <p className="text-sm text-dark-400 dark:text-light-400">
+                          {new Date(comment.createdAt).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })}
+                        </p>
+                      </div>
+                    </Link>
                   </div>
                 </div>
-                <p className="text-dark-300 dark:text-light-300 mb-4">{comment.content}</p>
+                <p className="text-dark-300 dark:text-light-300 mb-3 font-serif leading-relaxed">{comment.content}</p>
+
+                {/* Comment Actions: Like & Reply */}
+                <div className="flex items-center gap-4 text-xs text-dark-400 dark:text-light-400 pt-2 border-t border-light-300/60 dark:border-dark-300/60">
+                  <button
+                    onClick={() => handleLikeComment(comment._id)}
+                    className={`flex items-center gap-1 hover:text-rose-500 transition-colors ${
+                      Array.isArray(comment.likedBy) && comment.likedBy.some(id => String(id) === String(user?._id))
+                        ? 'text-rose-500 font-bold'
+                        : ''
+                    }`}
+                  >
+                    <Heart
+                      size={14}
+                      fill={Array.isArray(comment.likedBy) && comment.likedBy.some(id => String(id) === String(user?._id)) ? 'currentColor' : 'none'}
+                    />
+                    <span>{comment.likes || 0}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setReplyInputOpen(prev => ({ ...prev, [comment._id]: !prev[comment._id] }))}
+                    className="flex items-center gap-1 hover:text-primary-500 transition-colors"
+                  >
+                    <CornerDownRight size={14} />
+                    <span>Reply</span>
+                  </button>
+                </div>
+
+                {/* Reply Form */}
+                {replyInputOpen[comment._id] && (
+                  <div className="ml-6 mt-3 pl-3 border-l-2 border-primary-500/40 flex gap-2">
+                    <input
+                      type="text"
+                      value={replyText[comment._id] || ''}
+                      onChange={(e) => setReplyText(prev => ({ ...prev, [comment._id]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSendReply(comment._id);
+                        }
+                      }}
+                      placeholder={`Reply to @${comment.user?.username || 'user'}...`}
+                      className="flex-1 px-3 py-1.5 text-xs rounded-full bg-light-100 dark:bg-dark-100 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    />
+                    <button
+                      onClick={() => handleSendReply(comment._id)}
+                      disabled={!(replyText[comment._id] || '').trim()}
+                      className="px-3.5 py-1 rounded-full bg-primary-600 text-white text-xs font-bold disabled:opacity-40"
+                    >
+                      Send
+                    </button>
+                  </div>
+                )}
+
+                {/* Threaded Replies */}
+                {Array.isArray(comment.replies) && comment.replies.length > 0 && (
+                  <div className="ml-6 mt-3 pl-3 border-l-2 border-light-300 dark:border-dark-300 space-y-2.5">
+                    {comment.replies.map((reply, rIdx) => (
+                      <div key={reply._id || rIdx} className="flex gap-2.5 items-start text-xs">
+                        <img
+                          src={reply.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.user?.name || 'User')}`}
+                          alt={reply.user?.name}
+                          className="h-6 w-6 rounded-full object-cover shrink-0 mt-0.5"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-dark-100 dark:text-light-100">{reply.user?.name}</span>
+                            <span className="text-[10px] text-dark-400 dark:text-light-400">@{reply.user?.username}</span>
+                          </div>
+                          <p className="text-dark-300 dark:text-light-300 font-serif mt-0.5 leading-relaxed">{reply.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           ) : (
             <div className="text-center py-8">
               <p className="text-dark-300 dark:text-light-300">
-                No comments yet. Be the first to share your thoughts!
+                No discussion yet. Be the first to share your thoughts!
               </p>
             </div>
           )}
@@ -324,39 +519,11 @@ const BlogDetailPage: React.FC = () => {
           <div>
             <span className="block text-sm text-dark-400 dark:text-light-400">Back to</span>
             <span className="font-medium text-dark-100 group-hover:text-primary-600 dark:text-light-100 dark:group-hover:text-primary-400">
-              All Articles
+              Repository
             </span>
           </div>
         </Link>
       </div>
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark-100/50 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-lg bg-light-100 p-6 dark:bg-dark-200 shadow-xl">
-            <h3 className="mb-4 text-xl font-bold font-heading text-dark-100 dark:text-light-100">
-              Confirm Deletion
-            </h3>
-            <p className="mb-6 text-dark-300 dark:text-light-300">
-              Are you sure you want to delete this post? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="btn btn-outline"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="btn bg-red-600 text-white hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

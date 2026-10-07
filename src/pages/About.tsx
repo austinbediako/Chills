@@ -1,126 +1,121 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Rocket, Users, Globe, Code, Shield, Brain } from 'lucide-react';
 
 const AboutPage: React.FC = () => {
   return (
-    <div className="flex min-h-[calc(100vh-16rem)] flex-col items-center justify-center py-12 text-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-6xl px-4"
-      >
-        {/* Hero Section */}
-        <div className="mb-12 space-y-6">
-          <motion.div 
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            className="mb-8 text-6xl font-bold font-heading bg-gradient-to-r from-primary-600 to-secondary-500 bg-clip-text text-transparent"
-          >
-            Shaping the Future of Digital Content
-          </motion.div>
-          
-          <p className="text-xl text-dark-300 dark:text-light-300 max-w-3xl mx-auto">
-            At Chills Blogg, we believe that blogging should be more than just writing—it should be an experience. That’s why we’ve built a futuristic, modern, and intuitive platform that blends aesthetics with functionality
-          </p>
+    <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden pt-24 pb-32">
+      {/* Grid Backdrop */}
+      <div className="grid-backdrop text-dark-500 dark:text-light-500" aria-hidden="true">
+        <div className="grid-backdrop__cols container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid-backdrop__col"></div>
+          <div className="grid-backdrop__col"></div>
+          <div className="grid-backdrop__col"></div>
+          <div className="grid-backdrop__col"></div>
+          <div className="grid-backdrop__col"></div>
         </div>
+      </div>
 
-        {/* Core Values Grid */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {[
-            { icon: <Rocket size={40} />, title: "Innovation", desc: "Fresh, well-researched, and engaging content that keeps you informed and entertained." },
-            { icon: <Globe size={40} />, title: "Global Reach", desc: "Read, like, comment, and bookmark your favorite posts. Let's create a space where ideas flow freely, and discussions thrive." },
-            { icon: <Shield size={40} />, title: "Security", desc: "Enterprise-grade protection for all user data" },
-            { icon: <Code size={40} />, title: "Technology", desc: "Leveraging cutting-edge AI and blockchain solutions" },
-            { icon: <Brain size={40} />, title: "Knowledge", desc: "Curating expert-led educational content" },
-            { icon: <Users size={40} />, title: "Community", desc: "2M+ strong global community of creators" },
-          ].map((item, index) => (
-            <motion.div 
-              key={item.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="card p-6 hover:border-primary-500 transition-all"
-            >
-              <div className="text-primary-600 dark:text-primary-400 mb-4">{item.icon}</div>
-              <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-              <p className="text-dark-300 dark:text-light-300">{item.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Mission Statement */}
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        {/* Header Section */}
         <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-gradient-to-r from-primary-600/10 to-secondary-500/10 p-8 rounded-2xl mb-12"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-32"
         >
-          <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
-          <p className="text-xl text-dark-300 dark:text-light-300 max-w-2xl mx-auto">
-            To deliver accurate and good information to our community
-          </p>
+          <div className="max-w-4xl">
+            <h1 className="text-[10vw] md:text-[8vw] leading-[0.9] font-heading tracking-tight text-dark-100 dark:text-light-100 mb-8">
+              Our <span className="italic font-light text-primary-600 dark:text-primary-400">story.</span>
+            </h1>
+            <p className="text-xl md:text-3xl text-dark-400 dark:text-light-400 font-light tracking-tight max-w-3xl leading-relaxed">
+              We started KBlog to elevate digital publishing. No noise. No algorithm feeds. Just intentional writing and thoughtful readers.
+            </p>
+          </div>
         </motion.div>
 
-        {/* Stats Section */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          {[
-            { number: "10M+", label: "Monthly Readers" },
-            { number: "150+", label: "Countries Served" },
-            { number: "500K+", label: "Active Readers" },
-            { number: "99.9%", label: "Uptime Reliability" },
-          ].map((stat, index) => (
+        {/* Story Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-8 mb-32">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="aspect-[4/5] bg-dark-200 rounded-2xl overflow-hidden relative"
+          >
+            <div className="absolute inset-0 bg-primary-900/20 mix-blend-multiply z-10"></div>
+            <img 
+              src="https://images.unsplash.com/photo-1505682634904-d7c8d95cdc50?q=80&w=2940&auto=format&fit=crop" 
+              alt="Editorial desk" 
+              className="absolute inset-0 w-full h-full object-cover grayscale contrast-125 opacity-80"
+            />
+          </motion.div>
+          
+          <div className="flex flex-col justify-center">
             <motion.div
-              key={stat.label}
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: index * 0.1 }}
-              className="card p-4"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <div className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-500 bg-clip-text text-transparent">
-                {stat.number}
+              <h2 className="text-3xl md:text-5xl font-heading font-bold mb-8 text-dark-100 dark:text-light-100 tracking-tight">
+                Design <br/><span className="italic font-light text-primary-500">dictates thought.</span>
+              </h2>
+              <div className="space-y-6 text-lg text-dark-400 dark:text-light-400 font-light">
+                <p>
+                  We believe that the medium shapes the message. When you write on a cluttered platform full of ads and distractions, your writing suffers. When you write on a blank, beautifully typeset canvas, your ideas breathe.
+                </p>
+                <p>
+                  KBlog is an engineering and design studio building the finest tools for independent thinkers, essayists, and publishers. We strip away the unnecessary so you can focus on what matters: the words.
+                </p>
               </div>
-              <div className="text-dark-300 dark:text-light-300">{stat.label}</div>
             </motion.div>
-          ))}
+          </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-          <Link to="/blog" className="btn btn-primary flex items-center">
-            <Rocket size={20} className="mr-2" />
-            Start Reading
-          </Link>
-          <Link to="/contact" className="btn btn-outline flex items-center">
-            <Users size={20} className="mr-2" />
-            Join Our Team
-          </Link>
-        </div>
+        {/* Stats Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="border-y border-light-300 dark:border-dark-300 py-16 mb-32"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { number: "10M+", label: "Monthly Readers" },
+              { number: "150+", label: "Countries Served" },
+              { number: "500K+", label: "Active Writers" },
+              { number: "99.9%", label: "Uptime Reliability" },
+            ].map((stat, index) => (
+              <div key={stat.label} className="text-center md:text-left">
+                <div className="text-4xl md:text-5xl font-heading font-bold text-dark-100 dark:text-light-100 mb-2 tracking-tighter">
+                  {stat.number}
+                </div>
+                <div className="text-dark-400 dark:text-light-400 text-xs md:text-sm uppercase tracking-widest font-semibold">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
 
-        {/* Innovation Timeline */}
-        <div className="mt-16 border-l-2 border-primary-500/30 pl-8 ml-4">
-          <h2 className="text-2xl font-bold mb-8">Innovation Timeline</h2>
-          {[
-            { year: "2024", event: "AI Integration" },
-            { year: "2023", event: "Global Community Expansion" },
-            { year: "2022", event: "Building of followers" },
-            { year: "2021", event: "Company Foundation" },
-          ].map((item, index) => (
-            <motion.div
-              key={item.year}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="relative mb-8 pl-6"
-            >
-              <div className="absolute w-4 h-4 bg-primary-500 rounded-full -left-[2.1rem] top-2" />
-              <h3 className="text-lg font-bold">{item.year}</h3>
-              <p className="text-dark-300 dark:text-light-300">{item.event}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
+        {/* Call to action */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="text-center max-w-2xl mx-auto pb-16"
+        >
+          <h2 className="text-4xl md:text-6xl font-heading tracking-tight mb-8">
+            Join the <span className="italic font-light text-primary-500">movement.</span>
+          </h2>
+          <Link to="/auth/signup" className="inline-block rounded-full bg-dark-100 dark:bg-light-100 text-light-100 dark:text-dark-100 px-8 py-4 font-medium text-lg hover:scale-105 transition-transform duration-300 shadow-xl">
+            Start writing today
+          </Link>
+        </motion.div>
+
+      </div>
     </div>
   );
 };

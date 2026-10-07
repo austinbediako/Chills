@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,45 +6,45 @@
 
 @layer base {
   :root {
-    /* Primary color - Purple */
-    --color-primary-50: 250 245 255;
-    --color-primary-100: 243 232 255;
-    --color-primary-200: 233 213 255;
-    --color-primary-300: 216 180 254;
-    --color-primary-400: 192 132 252;
-    --color-primary-500: 168 85 247;
-    --color-primary-600: 147 51 234;
-    --color-primary-700: 126 34 206;
-    --color-primary-800: 107 33 168;
-    --color-primary-900: 88 28 135;
-    --color-primary-950: 59 7 100;
+    /* Primary color - Vibrant Indigo */
+    --color-primary-50: 238 242 255;
+    --color-primary-100: 224 231 255;
+    --color-primary-200: 199 210 254;
+    --color-primary-300: 165 180 252;
+    --color-primary-400: 129 140 248;
+    --color-primary-500: 99 102 241;
+    --color-primary-600: 79 70 229;
+    --color-primary-700: 67 56 202;
+    --color-primary-800: 55 48 163;
+    --color-primary-900: 49 46 129;
+    --color-primary-950: 30 27 75;
 
-    /* Secondary color - Teal */
-    --color-secondary-50: 240 253 250;
-    --color-secondary-100: 204 251 241;
-    --color-secondary-200: 153 246 228;
-    --color-secondary-300: 94 234 212;
-    --color-secondary-400: 45 212 191;
-    --color-secondary-500: 20 184 166;
-    --color-secondary-600: 13 148 136;
-    --color-secondary-700: 15 118 110;
-    --color-secondary-800: 17 94 89;
-    --color-secondary-900: 19 78 74;
-    --color-secondary-950: 4 47 46;
+    /* Secondary color - Elegant Violet for accents */
+    --color-secondary-50: 245 243 255;
+    --color-secondary-100: 237 233 254;
+    --color-secondary-200: 221 214 254;
+    --color-secondary-300: 196 181 253;
+    --color-secondary-400: 167 139 250;
+    --color-secondary-500: 139 92 246;
+    --color-secondary-600: 124 58 237;
+    --color-secondary-700: 109 40 217;
+    --color-secondary-800: 91 33 182;
+    --color-secondary-900: 76 29 149;
+    --color-secondary-950: 46 16 101;
 
-    /* Light theme colors */
-    --color-light-100: 255 255 255;
-    --color-light-200: 249 250 251;
-    --color-light-300: 243 244 246;
-    --color-light-400: 229 231 235;
-    --color-light-500: 209 213 219;
+    /* Light theme colors - Creamy/Off-white for editorial background */
+    --color-light-100: 252 252 252;
+    --color-light-200: 248 248 248;
+    --color-light-300: 240 240 240;
+    --color-light-400: 225 225 225;
+    --color-light-500: 200 200 200;
 
-    /* Dark theme colors */
-    --color-dark-100: 17 24 39;
-    --color-dark-200: 31 41 55;
-    --color-dark-300: 55 65 81;
-    --color-dark-400: 75 85 99;
-    --color-dark-500: 107 114 128;
+    /* Dark theme colors - Very dark charcoal */
+    --color-dark-100: 15 15 15;
+    --color-dark-200: 24 24 24;
+    --color-dark-300: 38 38 38;
+    --color-dark-400: 64 64 64;
+    --color-dark-500: 115 115 115;
   }
 
   html {
@@ -57,72 +57,121 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-bold;
+    @apply font-heading font-bold tracking-tight;
   }
 }
 
 @layer components {
   .container-custom {
-    @apply container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
+    @apply mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 max-w-[1536px] w-full;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-sm px-5 py-2.5 text-sm font-medium transition-all focus:outline-none focus:ring-1 focus:ring-primary-900 dark:focus:ring-primary-100 disabled:opacity-50;
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-600 shadow-sm transition-colors;
   }
 
   .btn-secondary {
-    @apply bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500;
+    @apply bg-secondary-600 text-white hover:bg-secondary-700;
   }
 
   .btn-outline {
-    @apply border border-dark-300 dark:border-light-300 bg-transparent hover:bg-light-200 dark:hover:bg-dark-200 focus:ring-primary-500;
+    @apply border border-dark-300 dark:border-light-300 bg-transparent hover:bg-light-200 dark:hover:bg-dark-200 text-dark-100 dark:text-light-100;
   }
 
   .card {
-    @apply bg-light-100 dark:bg-dark-200 rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg;
+    @apply bg-white dark:bg-dark-200 border border-light-300 dark:border-dark-300 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md;
   }
 
   .input {
-    @apply block w-full rounded-md border border-light-400 dark:border-dark-300 bg-light-100 dark:bg-dark-200 px-4 py-2 text-dark-100 dark:text-light-100 focus:border-primary-500 focus:ring-primary-500;
+    @apply block w-full rounded-sm border border-light-400 dark:border-dark-300 bg-transparent px-4 py-2 text-dark-100 dark:text-light-100 focus:border-primary-900 dark:focus:border-primary-100 focus:ring-1 focus:ring-primary-900 dark:focus:ring-primary-100 transition-colors placeholder:text-dark-500 dark:placeholder:text-light-500;
   }
 }
 
 /* Animations */
 .fade-in {
-  animation: fadeIn 0.5s ease-in-out;
+  animation: fadeIn 0.5s ease-out;
 }
 
 .slide-up {
-  animation: slideUp 0.5s ease-in-out;
+  animation: slideUp 0.5s ease-out;
 }
 
 .slide-down {
-  animation: slideDown 0.5s ease-in-out;
+  animation: slideDown 0.5s ease-out;
 }
 
 /* Transitions */
 .page-transition {
-  @apply transition-all duration-300 ease-in-out;
+  @apply transition-all duration-300 ease-out;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-light-200 dark:bg-dark-300;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary-300 dark:bg-primary-700 rounded-full;
+  @apply bg-primary-300 dark:bg-dark-300 rounded-none;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary-400 dark:bg-primary-600;
+  @apply bg-primary-400 dark:bg-dark-400;
+}
+
+/* Driezie Studio specific grid and grain overlay */
+.grid-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.04;
+}
+
+.dark .grid-backdrop {
+  opacity: 0.08;
+}
+
+.grid-backdrop__cols {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.grid-backdrop__col {
+  width: 1px;
+  height: 100%;
+  background-color: currentColor;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.04"/></svg>');
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 1;
+}
+
+.dark body::before {
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
 }

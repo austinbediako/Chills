@@ -30,12 +30,21 @@ axios.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
-      // Clear user data from localStorage
-      localStorage.removeItem('user');
-      
-      // Redirect to login page if not already there
-      if (!window.location.pathname.includes('/auth/login')) {
-        window.location.href = '/auth/login';
+      const message = String(error.response.data?.message || '').toLowerCase();
+      const isTokenFailure = 
+        message.includes('token') || 
+        message.includes('jwt') || 
+        message.includes('expired') ||
+        message.includes('user not found') ||
+        message.includes('not authorized') ||
+        error.config?.url?.includes('/api/auth/me');
+
+      // Only wipe session and redirect to login if the auth token itself is expired/invalid
+      if (isTokenFailure) {
+        localStorage.removeItem('user');
+        if (!window.location.pathname.includes('/auth/login')) {
+          window.location.href = '/auth/login';
+        }
       }
     }
     

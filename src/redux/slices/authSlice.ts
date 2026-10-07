@@ -9,6 +9,7 @@ interface User {
   username: string;
   gender?: string;
   avatar?: string;
+  coverImage?: string;
   bio?: string;
   role: string;
   token: string;
@@ -40,7 +41,9 @@ interface UpdateProfileData {
   username?: string;
   bio?: string;
   avatar?: string;
+  coverImage?: string;
   password?: string;
+  gender?: string;
 }
 
 // Initial state

@@ -111,11 +111,11 @@ const AuthPage: React.FC = () => {
         className="w-full max-w-md"
       >
         <div className="card overflow-hidden">
-          <div className="bg-gradient-to-r from-primary-600 to-secondary-600 p-6 text-white">
-            <h1 className="text-2xl font-bold font-heading">
+          <div className="border-b border-light-300 dark:border-dark-300 bg-light-200 dark:bg-dark-300 p-8 text-center">
+            <h1 className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100">
               {authType === 'login' ? 'Welcome Back' : 'Create Account'}
             </h1>
-            <p className="mt-2 text-white/80">
+            <p className="mt-2 text-dark-400 dark:text-light-400 font-serif">
               {authType === 'login'
                 ? 'Sign in to access your account'
                 : 'Join our community of writers and readers'}

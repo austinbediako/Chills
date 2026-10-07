@@ -41,6 +41,8 @@ export const useAuth = () => {
     password?: string;
     bio?: string;
     avatar?: string;
+    coverImage?: string;
+    gender?: string;
     role?: string;
   }
 

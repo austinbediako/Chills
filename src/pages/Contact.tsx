@@ -14,15 +14,15 @@ const ContactPage: React.FC = () => {
         {/* Hero Section */}
         <div className="mb-12 space-y-6">
           <motion.div 
-            initial={{ scale: 0.9 }}
+            initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
-            className="mb-8 text-6xl font-bold font-heading bg-gradient-to-r from-primary-600 to-secondary-500 bg-clip-text text-transparent"
+            className="mb-8 text-5xl md:text-7xl font-bold font-heading text-dark-100 dark:text-light-100 tracking-tight"
           >
-            Connect With Innovation
+            Get in Touch
           </motion.div>
           
-          <p className="text-xl text-dark-300 dark:text-light-300 max-w-3xl mx-auto">
-            Let's shape the future together. Reach out to our team of digital pioneers and technology visionaries.
+          <p className="text-xl text-dark-400 dark:text-light-400 max-w-3xl mx-auto font-serif leading-relaxed">
+            Reach out to the KBlog editorial and engineering teams.
           </p>
         </div>
 
@@ -32,7 +32,7 @@ const ContactPage: React.FC = () => {
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="card p-8 text-left"
+            className="card p-8 md:p-12 text-left rounded-none border border-light-300 dark:border-dark-300 bg-white dark:bg-dark-200"
           >
             <h2 className="text-3xl font-bold mb-6">Send a Message</h2>
             <form className="space-y-6">
@@ -76,7 +76,7 @@ const ContactPage: React.FC = () => {
             <div className="card p-6">
               <div className="space-y-6">
                 {[
-                  { icon: <Mail size={32} />, title: "Email", value: "support@chillsblogg.io", link: "mailto:support@chillsblogg.io" },
+                  { icon: <Mail size={32} />, title: "Email", value: "hello@kblog.io", link: "mailto:hello@kblog.io" },
                   { icon: <Phone size={32} />, title: "Phone", value: "+1 (555) 123-4567", link: "tel:+15551234567" },
                   { icon: <MapPin size={32} />, title: "HQ Location", value: "Silicon Valley, CA" },
                 ].map((item) => (
@@ -104,7 +104,7 @@ const ContactPage: React.FC = () => {
             {/* Support Hours */}
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="card p-6 bg-gradient-to-br from-primary-600/10 to-secondary-500/10"
+              className="card p-6 bg-light-200 dark:bg-dark-300 rounded-none border-l-4 border-l-primary-900 dark:border-l-primary-100"
             >
               <div className="flex items-center space-x-4">
                 <Clock size={32} className="text-primary-600 dark:text-primary-400" />
@@ -156,7 +156,7 @@ const ContactPage: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 className="p-6 rounded-xl bg-light-100 dark:bg-dark-200"
               >
-                <div className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-secondary-500 bg-clip-text text-transparent mb-4">
+                <div className="text-4xl font-heading font-bold text-dark-100 dark:text-light-100 mb-4 tracking-tight">
                   {index + 1}
                 </div>
                 <h3 className="text-xl font-bold mb-2">{region}</h3>
@@ -171,7 +171,7 @@ const ContactPage: React.FC = () => {
         {/* Live Chat */}
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="card p-6 bg-gradient-to-br from-primary-600 to-secondary-500 text-white"
+          className="card p-8 bg-primary-900 text-white rounded-none border border-primary-900"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">

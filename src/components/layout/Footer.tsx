@@ -2,18 +2,20 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Github } from 'lucide-react';
 
+import Logo from '../common/Logo';
+
 const Footer: React.FC = () => {
   return (
     <footer className="bg-light-200 dark:bg-dark-200 border-t border-light-300 dark:border-dark-300 transition-colors duration-300">
-      <div className="container-custom py-12">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div className="container-custom py-16">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Column 1 - About */}
           <div>
-            <h3 className="text-xl font-heading font-bold text-dark-100 dark:text-light-100 mb-4">
-              Chills Blogg
-            </h3>
-            <p className="text-dark-300 dark:text-light-300 mb-4">
-              Where innovation meets information—delivering credible content with a sleek, futuristic design and seamless user experience.
+            <div className="mb-6">
+              <Logo />
+            </div>
+            <p className="text-dark-400 dark:text-light-400 mb-6 text-sm leading-relaxed">
+              Where journalism meets technology. Insightful, deeply researched essays on design, development, and culture.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-dark-300 hover:text-primary-600 dark:text-light-300 dark:hover:text-primary-400 transition-colors">
@@ -59,10 +61,10 @@ const Footer: React.FC = () => {
               Categories
             </h3>
             <ul className="space-y-2">
-              {['Technology', 'Design', 'Development', 'Business', 'Lifestyle', 'Photography'].map((item) => (
+              {['Technology', 'Design', 'Development', 'Business', 'Lifestyle', 'Programming'].map((item) => (
                 <li key={item}>
                   <Link
-                    to={`/categories/${item.toLowerCase()}`}
+                    to={`/explore?category=${encodeURIComponent(item)}`}
                     className="text-dark-300 hover:text-primary-600 dark:text-light-300 dark:hover:text-primary-400 transition-colors"
                   >
                     {item}
@@ -94,8 +96,8 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-light-300 dark:border-dark-300 text-center text-dark-300 dark:text-light-300">
-          <p>© {new Date().getFullYear()} Chills Blogg. All rights reserved.</p>
+        <div className="mt-12 pt-6 border-t border-light-300 dark:border-dark-300 text-center text-dark-400 dark:text-light-400 text-sm">
+          <p>© {new Date().getFullYear()} KBlog. All rights reserved.</p>
         </div>
       </div>
     </footer>

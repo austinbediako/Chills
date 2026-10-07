@@ -1,0 +1,239 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Camera, Loader2, User as UserIcon, X, Check } from 'lucide-react';
+import axios from 'axios';
+import { useAuth } from '../hooks/useAuth';
+
+const UsernameSetupPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, updateUserProfile, loading } = useAuth();
+  
+  const [username, setUsername] = useState('');
+  const [avatar, setAvatar] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState('');
+  
+  // Clean up auto-generated username prefix if present to give a clean slate
+  useEffect(() => {
+    if (user?.username && user.username.startsWith('pending-')) {
+      setUsername('');
+    } else if (user?.username) {
+      setUsername(user.username);
+    }
+    if (user?.avatar) {
+      setAvatar(user.avatar);
+    }
+  }, [user]);
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    setUsername(val);
+    setError('');
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (PNG, JPG, WebP).');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setError('');
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const token = user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');
+      const headers = {
+        'Content-Type': 'multipart/form-data',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
+
+      // Uploads to Cloudinary in the "avatars" folder
+      const { data } = await axios.post('/api/users/upload?folder=avatars', formData, { headers });
+      if (data?.imageUrl) {
+        setAvatar(data.imageUrl);
+      }
+    } catch (err: any) {
+      console.warn('Avatar upload failed, falling back to local file reader:', err);
+      // Fallback: convert to base64 Data URL so user is never blocked
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setAvatar(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters.');
+      return;
+    }
+    
+    // Call the update profile thunk with username and avatar
+    const payload: { username: string; avatar?: string } = { username };
+    if (avatar) {
+      payload.avatar = avatar;
+    }
+
+    const success = await updateUserProfile(payload);
+    
+    if (success) {
+      // Proceed to optional personalization or the original destination
+      const from = (location.state as any)?.from?.pathname || '/onboarding/interests';
+      navigate(from, { replace: true });
+    } else {
+      setError('Username may already be taken or invalid.');
+    }
+  };
+
+  const pageVariants = {
+    initial: { opacity: 0, y: 20 },
+    in: { opacity: 1, y: 0 },
+    out: { opacity: 0, y: -20 }
+  };
+  const pageTransition = { type: "tween", ease: "anticipate", duration: 0.5 };
+
+  return (
+    <div className="min-h-screen bg-light-100 dark:bg-dark-100 flex flex-col relative overflow-hidden text-dark-100 dark:text-light-100 font-serif items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-light-100/80 dark:to-dark-100/80 z-0 pointer-events-none"></div>
+
+      <div className="relative z-10 w-full max-w-lg">
+        <motion.div
+          initial="initial" 
+          animate="in" 
+          exit="out" 
+          variants={pageVariants} 
+          transition={pageTransition}
+          className="bg-white dark:bg-dark-200 p-8 sm:p-10 rounded-3xl shadow-2xl border border-light-300 dark:border-dark-300"
+        >
+          <div className="text-center mb-8">
+            <h1 className="text-3xl sm:text-4xl font-heading font-bold tracking-tight mb-2">
+              Set up your profile
+            </h1>
+            <p className="text-base text-dark-400 dark:text-light-400">
+              Add a picture and choose your username to get started.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* ── Profile Picture Upload ── */}
+            <div className="flex flex-col items-center">
+              <div className="relative group">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-light-300 dark:border-dark-300 bg-light-200 dark:bg-dark-300 flex items-center justify-center shadow-lg relative">
+                  {avatar ? (
+                    <img 
+                      src={avatar} 
+                      alt="Avatar Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon size={54} className="text-dark-300 dark:text-light-400" />
+                  )}
+
+                  {/* Uploading overlay */}
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-dark-100/60 flex items-center justify-center backdrop-blur-xs">
+                      <Loader2 size={28} className="animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload Trigger Button */}
+                <label 
+                  htmlFor="avatar-upload"
+                  className="absolute bottom-0 right-0 bg-primary-600 hover:bg-primary-700 text-white p-2.5 rounded-full shadow-md cursor-pointer transition-transform hover:scale-110 flex items-center justify-center"
+                  title="Upload profile picture"
+                >
+                  <Camera size={18} />
+                  <input 
+                    id="avatar-upload"
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    disabled={isUploading} 
+                    onChange={handleImageUpload} 
+                  />
+                </label>
+
+                {/* Clear avatar button */}
+                {avatar && (
+                  <button
+                    type="button"
+                    onClick={() => setAvatar('')}
+                    className="absolute top-0 right-0 bg-dark-100/70 hover:bg-red-600 text-white p-1 rounded-full text-xs shadow-md transition-colors"
+                    title="Remove picture"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              <label 
+                htmlFor="avatar-upload"
+                className="mt-3 text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer"
+              >
+                {isUploading ? 'Uploading to Cloudinary...' : avatar ? 'Change profile picture' : 'Upload profile picture (optional)'}
+              </label>
+            </div>
+
+            {/* ── Username Input ── */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-dark-400 dark:text-light-400 mb-2">
+                Username
+              </label>
+              <div className="relative flex items-center">
+                <span className="absolute left-4 text-dark-400 font-medium text-lg">@</span>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={handleUsernameChange}
+                  className={`input pl-10 py-3.5 text-lg w-full font-medium ${error ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                  placeholder="username"
+                  autoFocus
+                  maxLength={30}
+                />
+              </div>
+              {error && <p className="mt-2 text-red-500 text-xs font-medium">{error}</p>}
+              <p className="mt-2 text-xs text-dark-400 dark:text-light-400">
+                Letters, numbers, and underscores only (min 3 chars).
+              </p>
+            </div>
+
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              disabled={loading || isUploading || username.length < 3}
+              className="w-full rounded-full bg-dark-100 dark:bg-light-100 text-light-100 dark:text-dark-100 py-3.5 font-medium text-base hover:scale-[1.02] transition-transform duration-300 shadow-xl disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Saving profile...</span>
+                </>
+              ) : (
+                <span>Continue</span>
+              )}
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+export default UsernameSetupPage;

@@ -11,7 +11,7 @@ const NotFoundPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="mb-8 text-9xl font-bold font-heading bg-gradient-to-r from-primary-600 to-secondary-500 bg-clip-text text-transparent">
+        <div className="mb-8 text-9xl font-bold font-heading text-dark-100 dark:text-light-100 tracking-tight">
           404
         </div>
         
@@ -58,7 +58,7 @@ const NotFoundPage: React.FC = () => {
           {['Technology', 'Development', 'Design', 'Business', 'Lifestyle'].map((category) => (
             <Link
               key={category}
-              to={`/categories/${category.toLowerCase()}`}
+              to={`/explore?category=${encodeURIComponent(category)}`}
               className="rounded-full bg-light-200 px-4 py-2 text-dark-500 hover:bg-primary-100 hover:text-primary-700 dark:bg-dark-300 dark:text-light-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400"
             >
               {category}

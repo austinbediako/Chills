@@ -2,10 +2,14 @@ import mongoose from 'mongoose';
 
 const commentSchema = new mongoose.Schema(
   {
-    post: {
+    submission: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Post',
+      ref: 'Submission',
       required: true,
+    },
+    isFlagged: {
+      type: Boolean,
+      default: false,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,6 +25,12 @@ const commentSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    likedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     replies: [
       {
         user: {
@@ -37,6 +47,12 @@ const commentSchema = new mongoose.Schema(
           type: Date,
           default: Date.now,
         },
+        likedBy: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+          },
+        ],
       },
     ],
   },

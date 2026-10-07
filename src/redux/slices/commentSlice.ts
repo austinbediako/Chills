@@ -15,14 +15,17 @@ interface Reply {
   user: User;
   content: string;
   date: string;
+  likedBy?: string[];
 }
 
 interface Comment {
   _id: string;
-  post: string;
+  submission: string;
   user: User;
   content: string;
-  likes: number;
+  isFlagged?: boolean;
+  likes?: number;
+  likedBy?: string[];
   replies: Reply[];
   createdAt: string;
   updatedAt: string;
@@ -44,9 +47,9 @@ const initialState: CommentState = {
 // Async thunks
 export const fetchComments = createAsyncThunk(
   'comments/fetchComments',
-  async (postId: string, { rejectWithValue }) => {
+  async (submissionId: string, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get<Comment[]>(`/api/posts/${postId}/comments`);
+      const { data } = await axios.get<Comment[]>(`/api/submissions/${submissionId}/comments`);
       return data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch comments');
@@ -56,7 +59,7 @@ export const fetchComments = createAsyncThunk(
 
 export const addComment = createAsyncThunk(
   'comments/addComment',
-  async ({ postId, content }: { postId: string; content: string }, { getState, rejectWithValue }) => {
+  async ({ submissionId, content }: { submissionId: string; content: string }, { getState, rejectWithValue }) => {
     try {
       const state = getState() as RootState;
       const { token } = state.auth.user || {};
@@ -69,7 +72,7 @@ export const addComment = createAsyncThunk(
       };
       
       const { data } = await axios.post<Comment>(
-        `/api/posts/${postId}/comments`,
+        `/api/submissions/${submissionId}/comments`,
         { content },
         config
       );
@@ -153,26 +156,7 @@ export const addReply = createAsyncThunk(
   }
 );
 
-export const likeComment = createAsyncThunk(
-  'comments/likeComment',
-  async (commentId: string, { getState, rejectWithValue }) => {
-    try {
-      const state = getState() as RootState;
-      const { token } = state.auth.user || {};
-      
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      
-      const { data } = await axios.put(`/api/comments/${commentId}/like`, {}, config);
-      return { commentId, likes: data.likes };
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to like comment');
-    }
-  }
-);
+// removed likeComment
 
 // Slice
 const commentSlice = createSlice({
@@ -261,13 +245,7 @@ const commentSlice = createSlice({
       state.error = action.payload as string;
     });
     
-    // Like Comment
-    builder.addCase(likeComment.fulfilled, (state, action) => {
-      const { commentId, likes } = action.payload;
-      state.comments = state.comments.map((comment) =>
-        comment._id === commentId ? { ...comment, likes } : comment
-      );
-    });
+    // removed likeComment case
   },
 });
 

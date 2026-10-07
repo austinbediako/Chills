@@ -85,6 +85,9 @@ export const getUserProfile = asyncHandler(async (req, res) => {
       username: user.username,
       email: user.email,
       name: user.name,
+      avatar: user.avatar,
+      bio: user.bio,
+      coverImage: user.coverImage || '',
       gender: user.gender,
       role: user.role,
     });
@@ -106,6 +109,17 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     user.name = req.body.name || user.name;
     user.gender = req.body.gender || user.gender;
 
+    if (req.body.avatar !== undefined) {
+      user.avatar = req.body.avatar;
+    }
+    if (req.body.bio !== undefined) {
+      user.bio = req.body.bio;
+    }
+
+    if (req.body.coverImage !== undefined) {
+      user.coverImage = req.body.coverImage;
+    }
+
     if (req.body.password) {
       user.password = req.body.password;
     }
@@ -117,6 +131,9 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
       username: updatedUser.username,
       email: updatedUser.email,
       name: updatedUser.name,
+      avatar: updatedUser.avatar,
+      coverImage: updatedUser.coverImage || '',
+      bio: updatedUser.bio,
       gender: updatedUser.gender,
       role: updatedUser.role,
       token: generateToken(updatedUser._id),

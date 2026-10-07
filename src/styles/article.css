@@ -1,0 +1,174 @@
+/* ==========================================================================
+   KBlog Article Renderer
+   
+   Shared styles for article content across the editor, preview, and
+   published article pages. This is the single source of truth for how
+   article body content (including floated images) is rendered.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   1. Article container — controls reading width and text overflow
+   --------------------------------------------------------------------------- */
+.kblog-article {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+/* Don't let inline code or links escape the article */
+.kblog-article code,
+.kblog-article a,
+.kblog-article span {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Code blocks: allow horizontal scroll instead of breaking layout */
+.kblog-article pre {
+  overflow-x: auto;
+  max-width: 100%;
+  word-break: normal;
+  white-space: pre;
+}
+
+/* ---------------------------------------------------------------------------
+   2. Image float and text wrapping — the core editorial layout
+   
+   The quill-image-resize-module-react Toolbar applies these inline styles:
+     float: left/right
+     display: inline
+     margin: 0 1em 1em 0  (left)  /  0 0 1em 1em  (right)
+   
+   We must NOT override those inline styles. Tailwind's `prose` class
+   forces img { display: block; margin: auto } which breaks floats.
+   We override prose's img rules here.
+   --------------------------------------------------------------------------- */
+
+/* Reset prose's forced block display on images inside article content */
+.kblog-article img {
+  display: inline !important;
+  margin: initial !important;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+/* When an image has explicit inline styles (set by the toolbar), respect them.
+   CSS float only works on block/inline elements, not on elements forced to
+   display:block by prose. The inline styles from Quill take priority via
+   the [style] attribute selector + !important on our reset above. */
+
+/* Floated images: ensure proper text clearance */
+.kblog-article img[style*="float: left"],
+.kblog-article img[style*="float:left"] {
+  float: left !important;
+  display: inline !important;
+  margin: 0.25em 1.25em 0.75em 0 !important;
+  max-width: 45%;
+  shape-outside: margin-box;
+}
+
+.kblog-article img[style*="float: right"],
+.kblog-article img[style*="float:right"] {
+  float: right !important;
+  display: inline !important;
+  margin: 0.25em 0 0.75em 1.25em !important;
+  max-width: 45%;
+  shape-outside: margin-box;
+}
+
+/* Centered images: block, no float */
+.kblog-article img[style*="margin: auto"],
+.kblog-article img[style*="margin:auto"] {
+  display: block !important;
+  float: none !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 1.5em !important;
+  max-width: 100%;
+}
+
+/* Images with no explicit alignment: default to centered block */
+.kblog-article img:not([style*="float"]):not([style*="margin: auto"]):not([style*="margin:auto"]) {
+  display: block !important;
+  margin: 1.5em auto !important;
+  max-width: 100%;
+}
+
+/* Clear floats after content blocks to prevent overlap */
+.kblog-article::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Paragraphs, headings, lists etc. flow naturally around floated images.
+   Do NOT set overflow:hidden on p — that creates a BFC which prevents wrapping. */
+.kblog-article blockquote,
+.kblog-article pre {
+  overflow: hidden; /* these elements contain their own formatting */
+  clear: both;
+}
+
+/* ---------------------------------------------------------------------------
+   3. Responsive: on mobile, floats collapse to centered block
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .kblog-article img[style*="float: left"],
+  .kblog-article img[style*="float:left"],
+  .kblog-article img[style*="float: right"],
+  .kblog-article img[style*="float:right"] {
+    float: none !important;
+    display: block !important;
+    margin: 1em auto !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   4. Typography refinements for article body
+   --------------------------------------------------------------------------- */
+.kblog-article p {
+  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin-bottom: 0.5em;
+  color: inherit;
+}
+
+.kblog-article h1,
+.kblog-article h2,
+.kblog-article h3 {
+  clear: both; /* headings always start below any floated image */
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+}
+
+.kblog-article blockquote {
+  border-left: 3px solid currentColor;
+  padding-left: 1.25em;
+  margin-left: 0;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.kblog-article ul,
+.kblog-article ol {
+  padding-left: 1.5em;
+  margin-bottom: 1.25em;
+}
+
+.kblog-article li {
+  margin-bottom: 0.35em;
+}
+
+.kblog-article a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

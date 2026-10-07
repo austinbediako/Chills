@@ -38,14 +38,30 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ['student', 'reviewer', 'admin'],
+      default: 'student',
     },
     gender: {
       type: String,
       required: [true, 'Gender is required'],
       enum: ['male', 'female', 'other'],
     },
+    coverImage: {
+      type: String,
+      default: '',
+    },
+    followers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    following: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     timestamps: true,

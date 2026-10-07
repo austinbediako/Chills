@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useComments } from '../../hooks/useComments';
 
 interface CommentFormProps {
-  postId: string;
+  submissionId: string;
   onSuccess?: () => void;
 }
 
-const CommentForm: React.FC<CommentFormProps> = ({ postId, onSuccess }) => {
+const CommentForm: React.FC<CommentFormProps> = ({ submissionId, onSuccess }) => {
   const [content, setContent] = useState('');
   const { createComment, loading } = useComments();
 
@@ -17,7 +17,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ postId, onSuccess }) => {
       return;
     }
     
-    const success = await createComment(postId, content);
+    const success = await createComment(submissionId, content);
     
     if (success) {
       setContent('');

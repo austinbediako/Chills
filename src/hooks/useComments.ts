@@ -1,32 +1,33 @@
-import { useSelector, useDispatch } from 'react-redux';
+import { useCallback } from 'react';
+import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
+import { useAppDispatch } from '../redux/hooks';
 import {
   fetchComments,
   addComment,
   updateComment,
   deleteComment,
   addReply,
-  likeComment,
 } from '../redux/slices/commentSlice';
 import { showNotification } from '../redux/slices/uiSlice';
 
 export const useComments = () => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { comments, loading, error } = useSelector((state: RootState) => state.comments);
 
-  const getComments = async (postId: string) => {
+  const getComments = useCallback(async (submissionId: string) => {
     try {
-      await dispatch(fetchComments(postId)).unwrap();
+      await dispatch(fetchComments(submissionId)).unwrap();
       return true;
     } catch (error) {
       dispatch(showNotification({ message: error as string, type: 'error' }));
       return false;
     }
-  };
+  }, [dispatch]);
 
-  const createComment = async (postId: string, content: string) => {
+  const createComment = async (submissionId: string, content: string) => {
     try {
-      await dispatch(addComment({ postId, content })).unwrap();
+      await dispatch(addComment({ submissionId, content })).unwrap();
       dispatch(showNotification({ message: 'Comment added successfully', type: 'success' }));
       return true;
     } catch (error) {
@@ -68,16 +69,6 @@ export const useComments = () => {
     }
   };
 
-  const likeCommentById = async (commentId: string) => {
-    try {
-      await dispatch(likeComment(commentId)).unwrap();
-      return true;
-    } catch (error) {
-      dispatch(showNotification({ message: error as string, type: 'error' }));
-      return false;
-    }
-  };
-
   return {
     comments,
     loading,
@@ -87,6 +78,5 @@ export const useComments = () => {
     editComment,
     removeComment,
     replyToComment,
-    likeCommentById,
   };
 };
