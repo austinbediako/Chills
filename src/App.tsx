@@ -51,7 +51,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
 
 // Set base URL for API requests
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5005';
+axios.defaults.baseURL = import.meta.env.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:5005';
 
 const PageLoadingFallback: React.FC = () => (
   <div className="min-h-[50vh] flex items-center justify-center py-16">
