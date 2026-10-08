@@ -292,9 +292,9 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                   onTouchEnd={handleTouchEnd}
                   onWheel={handleWheel}
                   style={{
-                    width: isAvatar ? '280px' : '100%',
-                    maxWidth: isAvatar ? '280px' : '540px',
-                    height: isAvatar ? '280px' : '180px',
+                    width: isAvatar ? 'min(260px, 100%)' : '100%',
+                    maxWidth: isAvatar ? '260px' : '540px',
+                    height: isAvatar ? 'min(260px, 65vw)' : '180px',
                     aspectRatio: isAvatar ? '1/1' : '3/1',
                   }}
                   className={`relative overflow-hidden ${

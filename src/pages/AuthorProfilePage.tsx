@@ -4,12 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Calendar, Heart, Repeat, MessageSquare, Clock, 
   Settings, Check, UserPlus, UserMinus, ShieldCheck, Sparkles,
-  BookOpen, Bookmark, Camera, Pencil
+  BookOpen, Bookmark, Camera, Pencil, Menu
 } from 'lucide-react';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
 import { useAuth } from '../hooks/useAuth';
-import { showNotification } from '../redux/slices/uiSlice';
+import { showNotification, toggleSidebar } from '../redux/slices/uiSlice';
 import ImageCropModal, { CropMode } from '../components/common/ImageCropModal';
 
 interface AuthorProfile {
@@ -419,27 +419,37 @@ const AuthorProfilePage: React.FC = () => {
     <div className="max-w-5xl lg:max-w-6xl mx-auto border-x border-light-200 dark:border-dark-300 min-h-screen bg-light-100/50 dark:bg-dark-100/50 pb-20 w-full min-w-0">
       
       {/* ── X-Style Top Header Bar ── */}
-      <div className="sticky top-20 z-40 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md px-4 py-2 flex items-center gap-6 border-b border-light-200 dark:border-dark-300">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 transition-colors text-dark-300 dark:text-light-300"
-          aria-label="Back"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h2 className="text-lg font-bold font-heading text-dark-100 dark:text-light-100 leading-tight flex items-center gap-1.5">
-            {author.name}
-            {author.role === 'admin' && (
-              <span className="text-primary-500" title="KBlog Staff / Administrator">
-                <ShieldCheck size={16} />
-              </span>
-            )}
-          </h2>
-          <span className="text-xs text-dark-400 dark:text-light-400">
-            {author.storiesCount} {author.storiesCount === 1 ? 'Story' : 'Stories'}
-          </span>
+      <div className="sticky top-0 z-40 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-light-200 dark:border-dark-300">
+        <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 transition-colors text-dark-300 dark:text-light-300 shrink-0"
+            aria-label="Back"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div className="min-w-0 truncate">
+            <h2 className="text-base sm:text-lg font-bold font-heading text-dark-100 dark:text-light-100 leading-tight flex items-center gap-1.5 truncate">
+              <span className="truncate">{author.name}</span>
+              {author.role === 'admin' && (
+                <span className="text-primary-500 shrink-0" title="KBlog Staff / Administrator">
+                  <ShieldCheck size={16} />
+                </span>
+              )}
+            </h2>
+            <span className="text-xs text-dark-400 dark:text-light-400">
+              {author.storiesCount} {author.storiesCount === 1 ? 'Story' : 'Stories'}
+            </span>
+          </div>
         </div>
+
+        <button
+          onClick={() => dispatch(toggleSidebar())}
+          className="lg:hidden p-2 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 text-dark-400 dark:text-light-300 transition-colors shrink-0"
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
       </div>
 
       {/* ── Cover Banner (Proper Wide Banner Format) ── */}
@@ -631,7 +641,7 @@ const AuthorProfilePage: React.FC = () => {
       </div>
 
       {/* ── Tabs Navigation Bar (like X) ── */}
-      <div className="flex border-b border-light-200 dark:border-dark-300 sticky top-20 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md">
+      <div className="flex border-b border-light-200 dark:border-dark-300 sticky top-[52px] z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md">
         {[
           { id: 'posts' as const, label: 'Posts' },
           { id: 'reposts' as const, label: 'Reposts' },

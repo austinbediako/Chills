@@ -22,8 +22,11 @@ import {
   Check,
   Flame,
   Globe,
+  Menu,
 } from 'lucide-react';
 import axios from 'axios';
+import { useDispatch } from 'react-redux';
+import { toggleSidebar } from '../../redux/slices/uiSlice';
 import { useSubmissions } from '../../hooks/useSubmissions';
 import { useAuth } from '../../hooks/useAuth';
 import BookmarkDropdown from '../../components/common/BookmarkDropdown';
@@ -51,6 +54,7 @@ interface TopicResult {
 
 const BlogListPage: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { submissions, loading, getSubmissions, interactSubmission } = useSubmissions();
   const { user, isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -455,6 +459,16 @@ const BlogListPage: React.FC = () => {
         {/* ========================================================================= */}
         <header className="sticky top-0 z-30 bg-light-100/95 dark:bg-dark-100/95 backdrop-blur-md border-b border-light-300 dark:border-dark-300 shadow-sm">
           <div className="px-4 py-2.5 flex items-center gap-3">
+            {!isSearchActive && (
+              <button
+                onClick={() => dispatch(toggleSidebar())}
+                className="lg:hidden p-2 -ml-1 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 text-dark-400 dark:text-light-300 transition-colors shrink-0"
+                aria-label="Open navigation menu"
+              >
+                <Menu size={20} />
+              </button>
+            )}
+
             {isSearchActive && (
               <button
                 onClick={handleClearSearch}
@@ -528,8 +542,8 @@ const BlogListPage: React.FC = () => {
                     <span
                       className={
                         isActive
-                          ? 'text-dark-100 dark:text-light-100 font-bold'
-                          : 'text-dark-400 dark:text-light-400 font-medium'
+                            ? 'text-dark-100 dark:text-light-100 font-bold'
+                            : 'text-dark-400 dark:text-light-400 font-medium'
                       }
                     >
                       {tab.label}
@@ -545,15 +559,15 @@ const BlogListPage: React.FC = () => {
               })}
             </div>
           ) : (
-            /* MODE 2: DEFAULT EXPLORE TABS (Cut short - top core tags only, no horizontal scroll) */
-            <div className="flex items-center border-t border-light-300 dark:border-dark-300 px-1 overflow-hidden">
+            /* MODE 2: DEFAULT EXPLORE TABS (Responsive tabs with no horizontal overflow issues) */
+            <div className="flex items-center border-t border-light-300 dark:border-dark-300 px-1 overflow-x-auto no-scrollbar">
               {['For you', 'Trending', ...categories.slice(0, 4).map((c) => c.name)].map((cat) => {
                 const isActive = activeCategoryTab === cat;
                 return (
                   <button
                     key={cat}
                     onClick={() => handleSelectCategoryTab(cat)}
-                    className="flex-1 min-w-0 py-3 text-center text-xs sm:text-sm font-semibold transition-colors relative hover:bg-light-200/50 dark:hover:bg-dark-200/40"
+                    className="flex-1 min-w-[68px] sm:min-w-0 py-3 text-center text-xs sm:text-sm font-semibold transition-colors relative hover:bg-light-200/50 dark:hover:bg-dark-200/40"
                   >
                     <span
                       className={`truncate block px-1 ${

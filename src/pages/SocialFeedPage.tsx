@@ -22,11 +22,12 @@ import {
   ArrowRight,
   Quote,
   Loader2,
+  Menu,
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import { useDispatch } from 'react-redux';
-import { showNotification } from '../redux/slices/uiSlice';
+import { showNotification, toggleSidebar } from '../redux/slices/uiSlice';
 import BookmarkDropdown from '../components/common/BookmarkDropdown';
 
 interface Author {
@@ -603,24 +604,31 @@ export const SocialFeedPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-light-100 dark:bg-dark-100 text-dark-100 dark:text-light-100 pb-16">
-      <div className="w-full px-2 sm:px-4 lg:px-6">
+      <div className="w-full px-0 sm:px-4 lg:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* ══════════════════════════════════════════════════════════════
               CENTER COLUMN: X-STYLE TIMELINE STREAM (8 Cols)
           ══════════════════════════════════════════════════════════════ */}
-          <main className="lg:col-span-8 border-x border-light-300/60 dark:border-dark-300/60 min-h-screen bg-light-100 dark:bg-dark-100 rounded-none sm:rounded-2xl overflow-hidden shadow-sm">
+          <main className="lg:col-span-8 border-x-0 sm:border-x border-light-300/60 dark:border-dark-300/60 min-h-screen bg-light-100 dark:bg-dark-100 rounded-none sm:rounded-2xl overflow-hidden shadow-sm">
             
             {/* ── Sticky Top Bar & Timeline Tabs ── */}
-            <div className="sticky top-20 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-xl border-b border-light-300/60 dark:border-dark-300/60">
-              <div className="px-5 py-3.5 flex items-center justify-between">
+            <div className="sticky top-0 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-xl border-b border-light-300/60 dark:border-dark-300/60">
+              <div className="px-4 sm:px-5 py-3 flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
+                  <button
+                    onClick={() => dispatch(toggleSidebar())}
+                    className="lg:hidden p-1.5 -ml-1 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 text-dark-400 dark:text-light-300 transition-colors"
+                    aria-label="Open navigation menu"
+                  >
+                    <Menu size={20} />
+                  </button>
                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
                   <h1 className="text-xl font-heading font-extrabold tracking-tight">Timeline</h1>
                 </div>
                 <Link
                   to="/write"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-dark-100 text-light-100 dark:bg-light-100 dark:text-dark-100 text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-dark-100 text-light-100 dark:bg-light-100 dark:text-dark-100 text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-sm"
                 >
                   <Edit3 size={13} />
                   <span>Write Post</span>

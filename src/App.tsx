@@ -178,6 +178,12 @@ function App() {
                   }
                 />
                 
+                {/* Settings Redirect to Profile */}
+                <Route
+                  path="settings"
+                  element={<Navigate to="/profile" replace />}
+                />
+                
                 {/* Onboarding Routes */}
                 <Route path="onboarding">
                   <Route

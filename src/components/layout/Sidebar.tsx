@@ -1,19 +1,39 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDispatch } from 'react-redux';
 import { X, Home, Search, Users, MessageSquare, Bookmark, BookOpen, Edit3, Settings, LogOut, ShieldAlert, Flame } from 'lucide-react';
 import Logo from '../common/Logo';
 import { useAuth } from '../../hooks/useAuth';
+import { closeSidebar as closeSidebarAction } from '../../redux/slices/uiSlice';
 
 interface SidebarProps {
   isOpen: boolean;
   toggleSidebar: () => void;
+  closeSidebar?: () => void;
   userRole: 'admin' | 'reviewer' | 'student' | 'user' | string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, userRole }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, userRole }) => {
   const location = useLocation();
+  const dispatch = useDispatch();
   const { user, logoutUser } = useAuth();
+
+  const handleClose = useCallback(() => {
+    dispatch(closeSidebarAction());
+    if (closeSidebar) {
+      closeSidebar();
+    } else if (isOpen) {
+      toggleSidebar();
+    }
+  }, [dispatch, closeSidebar, isOpen, toggleSidebar]);
+
+  // Close sidebar immediately whenever location/route changes
+  useEffect(() => {
+    if (isOpen) {
+      handleClose();
+    }
+  }, [location.pathname, location.search]);
 
   const sidebarVariants = {
     open: {
@@ -119,7 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, userRole }) =>
             exit="closed"
             variants={overlayVariants}
             className="fixed inset-0 bg-dark-100/50 z-40 lg:hidden"
-            onClick={toggleSidebar}
+            onClick={handleClose}
           />
           
           <motion.div
@@ -127,13 +147,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, userRole }) =>
             animate="open"
             exit="closed"
             variants={sidebarVariants}
-            className="fixed top-0 left-0 bottom-0 w-72 bg-light-100 dark:bg-dark-100 z-50 lg:hidden overflow-y-auto flex flex-col"
+            className="fixed top-0 left-0 bottom-0 w-72 bg-light-100 dark:bg-dark-100 z-50 lg:hidden overflow-y-auto flex flex-col shadow-2xl"
           >
             <div className="flex items-center justify-between p-4 border-b border-light-300 dark:border-dark-300 shrink-0">
-              <Logo />
+              <Link to="/" onClick={handleClose} className="hover:opacity-90 transition-opacity">
+                <Logo />
+              </Link>
               <button
-                onClick={toggleSidebar}
-                className="rounded-md p-2 text-dark-300 hover:bg-light-200 dark:text-light-300 dark:hover:bg-dark-200"
+                onClick={handleClose}
+                className="rounded-md p-2 text-dark-300 hover:bg-light-200 dark:text-light-300 dark:hover:bg-dark-200 transition-colors"
+                aria-label="Close sidebar"
               >
                 <X size={24} />
               </button>
@@ -141,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, userRole }) =>
             
             <div className="p-4 flex-1 flex flex-col">
               <div className="mb-6 mt-2">
-                <Link onClick={toggleSidebar} to="/write" className="w-full btn btn-primary flex items-center justify-center font-bold py-3 shadow-md">
+                <Link onClick={handleClose} to="/write" className="w-full btn btn-primary flex items-center justify-center font-bold py-3 shadow-md hover:shadow-lg transition-all">
                   <Edit3 size={18} className="mr-2" />
                   Write
                 </Link>
@@ -160,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, userRole }) =>
                               ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' 
                               : 'text-dark-300 dark:text-light-300 hover:bg-light-200 dark:hover:bg-dark-200 hover:text-dark-100 dark:hover:text-light-100'
                           }`}
-                          onClick={toggleSidebar}
+                          onClick={handleClose}
                         >
                           <span className="mr-3">{item.icon}</span>
                           {item.name}
@@ -174,22 +197,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, userRole }) =>
             
             {/* User Profile Area at Bottom */}
             <div className="p-4 border-t border-light-300 dark:border-dark-300 shrink-0 bg-light-50 dark:bg-dark-200/50">
-              <Link onClick={toggleSidebar} to={`/@${user?.username || 'user'}`} className="flex items-center mb-3">
+              <Link onClick={handleClose} to={`/@${user?.username || 'user'}`} className="flex items-center mb-3 group">
                 <img 
                   src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`} 
                   alt={user?.name || 'User'} 
-                  className="w-10 h-10 rounded-full border border-light-300 dark:border-dark-300 flex-shrink-0"
+                  className="w-10 h-10 rounded-full border border-light-300 dark:border-dark-300 flex-shrink-0 group-hover:ring-2 group-hover:ring-primary-500 transition-all"
                 />
                 <div className="ml-3 truncate">
-                  <p className="text-sm font-bold text-dark-100 dark:text-light-100 truncate">{user?.name}</p>
+                  <p className="text-sm font-bold text-dark-100 dark:text-light-100 truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{user?.name}</p>
                   <p className="text-xs text-dark-400 dark:text-light-400 truncate">@{user?.username}</p>
                 </div>
               </Link>
               <div className="flex gap-2">
-                <Link onClick={toggleSidebar} to="/settings" className="flex-1 text-center py-2 text-sm font-medium rounded-lg border border-light-300 dark:border-dark-300 text-dark-300 dark:text-light-300 hover:bg-light-200 dark:hover:bg-dark-200 transition-colors">
+                <Link onClick={handleClose} to="/profile" className="flex-1 text-center py-2 text-sm font-medium rounded-lg border border-light-300 dark:border-dark-300 text-dark-300 dark:text-light-300 hover:bg-light-200 dark:hover:bg-dark-200 transition-colors">
                   Settings
                 </Link>
-                <button onClick={() => { logoutUser(); toggleSidebar(); }} className="flex-1 text-center py-2 text-sm font-medium rounded-lg border border-light-300 dark:border-dark-300 text-dark-300 dark:text-light-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-800 transition-colors">
+                <button onClick={() => { logoutUser(); handleClose(); }} className="flex-1 text-center py-2 text-sm font-medium rounded-lg border border-light-300 dark:border-dark-300 text-dark-300 dark:text-light-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-800 transition-colors">
                   Sign Out
                 </button>
               </div>

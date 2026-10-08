@@ -256,7 +256,7 @@ export const ProfilePage: React.FC = () => {
       <div className="max-w-5xl lg:max-w-6xl mx-auto border-x border-light-200 dark:border-dark-300 min-h-screen bg-light-100/40 dark:bg-dark-100/40">
         
         {/* ── Sticky Top Header Bar (like X) ── */}
-        <div className="sticky top-16 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-xl px-5 py-3.5 flex items-center justify-between border-b border-light-300 dark:border-dark-300">
+        <div className="sticky top-0 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-xl px-5 py-3.5 flex items-center justify-between border-b border-light-300 dark:border-dark-300">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(`/@${profileData.username || user?.username}`)}
