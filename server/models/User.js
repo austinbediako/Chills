@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema(
       enum: ['student', 'reviewer', 'admin'],
       default: 'student',
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
     gender: {
       type: String,
       required: [true, 'Gender is required'],

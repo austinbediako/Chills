@@ -8,11 +8,12 @@ import {
   UserCheck,
   UserX,
   ExternalLink,
-  Trash2,
   RefreshCw,
   AlertCircle,
   CheckCircle2,
   Filter,
+  Ban,
+  Check,
 } from 'lucide-react';
 import useAuthors, { AuthorUser } from '../hooks/useAuthors';
 import { useAuth } from '../hooks/useAuth';
@@ -20,14 +21,15 @@ import { useDispatch } from 'react-redux';
 import { showNotification } from '../redux/slices/uiSlice';
 
 const Authors: React.FC = () => {
-  const { authors, loading, error, refetch, updateUserRole, deleteUser } = useAuthors();
+  const { authors, loading, error, refetch, updateUserRole, toggleUserStatus } = useAuthors();
   const { user: currentUser } = useAuth();
   const dispatch = useDispatch();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'admin' | 'author' | 'user'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'DEACTIVATED'>('ALL');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
 
   // Filtered authors
   const filteredAuthors = useMemo(() => {
@@ -39,9 +41,15 @@ const Authors: React.FC = () => {
 
       const matchesRole = roleFilter === 'ALL' || a.role === roleFilter;
 
-      return matchesSearch && matchesRole;
+      const isUserActive = a.isActive !== false;
+      const matchesStatus =
+        statusFilter === 'ALL' ||
+        (statusFilter === 'ACTIVE' && isUserActive) ||
+        (statusFilter === 'DEACTIVATED' && !isUserActive);
+
+      return matchesSearch && matchesRole && matchesStatus;
     });
-  }, [authors, searchQuery, roleFilter]);
+  }, [authors, searchQuery, roleFilter, statusFilter]);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
@@ -55,24 +63,35 @@ const Authors: React.FC = () => {
     }
   };
 
-  const handleDelete = async (userToDelete: AuthorUser) => {
-    if (userToDelete._id === currentUser?._id) {
-      dispatch(showNotification({ message: 'You cannot delete your own account', type: 'error' }));
+  const handleToggleDeactivation = async (targetUser: AuthorUser) => {
+    if (targetUser._id === currentUser?._id) {
+      dispatch(showNotification({ message: 'You cannot deactivate your own administrator account', type: 'error' }));
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to delete user @${userToDelete.username}? This action cannot be undone.`)) {
+    const isCurrentlyActive = targetUser.isActive !== false;
+    const actionLabel = isCurrentlyActive ? 'deactivate' : 'reactivate';
+
+    if (!window.confirm(`Are you sure you want to ${actionLabel} @${targetUser.username}'s account?`)) {
       return;
     }
 
     try {
-      setDeletingId(userToDelete._id);
-      await deleteUser(userToDelete._id);
-      dispatch(showNotification({ message: `User @${userToDelete.username} deleted`, type: 'info' }));
+      setTogglingStatusId(targetUser._id);
+      await toggleUserStatus(targetUser._id, !isCurrentlyActive);
+      dispatch(showNotification({
+        message: isCurrentlyActive
+          ? `User @${targetUser.username} has been deactivated`
+          : `User @${targetUser.username} has been reactivated`,
+        type: 'success',
+      }));
     } catch (err: any) {
-      dispatch(showNotification({ message: err.response?.data?.message || 'Failed to delete user', type: 'error' }));
+      dispatch(showNotification({
+        message: err.response?.data?.message || `Failed to ${actionLabel} user`,
+        type: 'error',
+      }));
     } finally {
-      setDeletingId(null);
+      setTogglingStatusId(null);
     }
   };
 
@@ -127,28 +146,28 @@ const Authors: React.FC = () => {
           <p className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mt-1">{authors.length}</p>
         </div>
         <div className="p-4 rounded-xl border border-light-300 dark:border-dark-300 bg-light-100 dark:bg-dark-200/50">
+          <p className="text-xs uppercase font-mono tracking-wider text-emerald-600 dark:text-emerald-400">Active Accounts</p>
+          <p className="text-2xl font-bold font-heading text-emerald-600 dark:text-emerald-400 mt-1">
+            {authors.filter((a) => a.isActive !== false).length}
+          </p>
+        </div>
+        <div className="p-4 rounded-xl border border-light-300 dark:border-dark-300 bg-light-100 dark:bg-dark-200/50">
+          <p className="text-xs uppercase font-mono tracking-wider text-rose-600 dark:text-rose-400">Deactivated</p>
+          <p className="text-2xl font-bold font-heading text-rose-600 dark:text-rose-400 mt-1">
+            {authors.filter((a) => a.isActive === false).length}
+          </p>
+        </div>
+        <div className="p-4 rounded-xl border border-light-300 dark:border-dark-300 bg-light-100 dark:bg-dark-200/50">
           <p className="text-xs uppercase font-mono tracking-wider text-purple-600 dark:text-purple-400">Admins</p>
           <p className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mt-1">
             {authors.filter((a) => a.role === 'admin').length}
           </p>
         </div>
-        <div className="p-4 rounded-xl border border-light-300 dark:border-dark-300 bg-light-100 dark:bg-dark-200/50">
-          <p className="text-xs uppercase font-mono tracking-wider text-emerald-600 dark:text-emerald-400">Authors</p>
-          <p className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mt-1">
-            {authors.filter((a) => a.role === 'author').length}
-          </p>
-        </div>
-        <div className="p-4 rounded-xl border border-light-300 dark:border-dark-300 bg-light-100 dark:bg-dark-200/50">
-          <p className="text-xs uppercase font-mono tracking-wider text-dark-400 dark:text-light-400">Standard Users</p>
-          <p className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mt-1">
-            {authors.filter((a) => a.role === 'user' || !a.role).length}
-          </p>
-        </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mb-6 p-4 rounded-2xl bg-light-200/60 dark:bg-dark-200/40 border border-light-300 dark:border-dark-300">
-        <div className="relative w-full sm:w-80">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between mb-6 p-4 rounded-2xl bg-light-200/60 dark:bg-dark-200/40 border border-light-300 dark:border-dark-300">
+        <div className="relative w-full lg:w-80">
           <input
             type="text"
             value={searchQuery}
@@ -159,21 +178,39 @@ const Authors: React.FC = () => {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400 dark:text-light-400" />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <Filter size={15} className="text-dark-400 dark:text-light-400 shrink-0" />
-          {(['ALL', 'admin', 'author', 'user'] as const).map((role) => (
-            <button
-              key={role}
-              onClick={() => setRoleFilter(role)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors uppercase tracking-wider ${
-                roleFilter === role
-                  ? 'bg-dark-100 text-light-100 dark:bg-light-100 dark:text-dark-100 shadow-sm'
-                  : 'bg-light-100 dark:bg-dark-300 text-dark-400 dark:text-light-400 hover:bg-light-300 dark:hover:bg-dark-200'
-              }`}
-            >
-              {role === 'ALL' ? 'All Roles' : role}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 lg:pb-0">
+          <div className="flex items-center gap-1.5 border-r border-light-300 dark:border-dark-300 pr-2">
+            <Filter size={15} className="text-dark-400 dark:text-light-400 shrink-0" />
+            {(['ALL', 'admin', 'author', 'user'] as const).map((role) => (
+              <button
+                key={role}
+                onClick={() => setRoleFilter(role)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors uppercase tracking-wider ${
+                  roleFilter === role
+                    ? 'bg-dark-100 text-light-100 dark:bg-light-100 dark:text-dark-100 shadow-sm'
+                    : 'bg-light-100 dark:bg-dark-300 text-dark-400 dark:text-light-400 hover:bg-light-300 dark:hover:bg-dark-200'
+                }`}
+              >
+                {role === 'ALL' ? 'All Roles' : role}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 pl-1">
+            {(['ALL', 'ACTIVE', 'DEACTIVATED'] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors uppercase tracking-wider ${
+                  statusFilter === status
+                    ? 'bg-primary-600 text-white shadow-sm'
+                    : 'bg-light-100 dark:bg-dark-300 text-dark-400 dark:text-light-400 hover:bg-light-300 dark:hover:bg-dark-200'
+                }`}
+              >
+                {status === 'ALL' ? 'All Status' : status === 'ACTIVE' ? 'Active' : 'Deactivated'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -225,6 +262,7 @@ const Authors: React.FC = () => {
                   <th className="py-3.5 px-4 sm:px-6 font-semibold">User</th>
                   <th className="py-3.5 px-4 font-semibold hidden md:table-cell">Email</th>
                   <th className="py-3.5 px-4 font-semibold">Role</th>
+                  <th className="py-3.5 px-4 font-semibold">Status</th>
                   <th className="py-3.5 px-4 font-semibold hidden sm:table-cell">Followers</th>
                   <th className="py-3.5 px-4 sm:px-6 text-right font-semibold">Actions</th>
                 </tr>
@@ -233,13 +271,16 @@ const Authors: React.FC = () => {
                 {filteredAuthors.map((author) => {
                   const isCurrent = author._id === currentUser?._id;
                   const profileUrl = author.username ? `/@${author.username}` : '#';
+                  const isActive = author.isActive !== false;
 
                   return (
                     <motion.tr
                       key={author._id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="hover:bg-light-200/40 dark:hover:bg-dark-200/40 transition-colors"
+                      className={`hover:bg-light-200/40 dark:hover:bg-dark-200/40 transition-colors ${
+                        !isActive ? 'opacity-75 bg-rose-50/20 dark:bg-rose-950/10' : ''
+                      }`}
                     >
                       {/* User Info */}
                       <td className="py-3.5 px-4 sm:px-6">
@@ -300,6 +341,21 @@ const Authors: React.FC = () => {
                         </div>
                       </td>
 
+                      {/* Account Status Badge */}
+                      <td className="py-3.5 px-4">
+                        {isActive ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            Deactivated
+                          </span>
+                        )}
+                      </td>
+
                       {/* Followers */}
                       <td className="py-3.5 px-4 hidden sm:table-cell text-xs text-dark-400 dark:text-light-400">
                         {Array.isArray(author.followers) ? author.followers.length : 0}
@@ -318,12 +374,23 @@ const Authors: React.FC = () => {
 
                           {!isCurrent && (
                             <button
-                              onClick={() => handleDelete(author)}
-                              disabled={deletingId === author._id}
-                              className="p-1.5 rounded-lg text-red-500 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
-                              title="Delete User Account"
+                              onClick={() => handleToggleDeactivation(author)}
+                              disabled={togglingStatusId === author._id}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
+                                isActive
+                                  ? 'text-amber-600 hover:text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50'
+                                  : 'text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50'
+                              }`}
+                              title={isActive ? 'Deactivate User Account' : 'Reactivate User Account'}
                             >
-                              <Trash2 size={16} />
+                              {togglingStatusId === author._id ? (
+                                <RefreshCw size={13} className="animate-spin" />
+                              ) : isActive ? (
+                                <Ban size={13} />
+                              ) : (
+                                <CheckCircle2 size={13} />
+                              )}
+                              <span>{isActive ? 'Deactivate' : 'Activate'}</span>
                             </button>
                           )}
                         </div>

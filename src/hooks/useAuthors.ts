@@ -11,6 +11,7 @@ export interface AuthorUser {
   avatar?: string;
   coverImage?: string;
   role: string;
+  isActive?: boolean;
   createdAt?: string;
   followers?: string[];
   following?: string[];
@@ -66,18 +67,25 @@ export const useAuthors = () => {
     }
   };
 
-  const deleteUser = async (userId: string) => {
+  const toggleUserStatus = async (userId: string, newActiveState?: boolean) => {
     try {
-      await axios.delete(`/api/users/${userId}`, getAuthHeader());
-      setAuthors((prev) => prev.filter((a) => a._id !== userId));
-      return true;
+      const res = await axios.patch(
+        `/api/users/${userId}/status`,
+        typeof newActiveState === 'boolean' ? { isActive: newActiveState } : {},
+        getAuthHeader()
+      );
+      const nextActive = res.data?.isActive ?? newActiveState;
+      setAuthors((prev) =>
+        prev.map((a) => (a._id === userId ? { ...a, isActive: nextActive } : a))
+      );
+      return res.data;
     } catch (err: any) {
-      console.error('Error deleting user:', err);
+      console.error('Error toggling user status:', err);
       throw err;
     }
   };
 
-  return { authors, loading, error, refetch: fetchAuthors, updateUserRole, deleteUser };
+  return { authors, loading, error, refetch: fetchAuthors, updateUserRole, toggleUserStatus };
 };
 
 export default useAuthors;

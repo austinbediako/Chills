@@ -60,6 +60,11 @@ export const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await user.matchPassword(password))) {
+    if (user.isActive === false) {
+      res.status(403);
+      throw new Error('This account has been deactivated. Please contact an administrator.');
+    }
+
     res.json({
       _id: user._id,
       username: user.username,
@@ -69,6 +74,7 @@ export const loginUser = asyncHandler(async (req, res) => {
       coverImage: user.coverImage || '',
       gender: user.gender,
       role: user.role,
+      isActive: user.isActive !== false,
       token: generateToken(user._id),
     });
   } else {

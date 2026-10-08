@@ -502,14 +502,54 @@ router.put(
       user.name = req.body.name || user.name;
       user.email = req.body.email || user.email;
       user.role = req.body.role || user.role;
+      if (typeof req.body.isActive === 'boolean') {
+        user.isActive = req.body.isActive;
+      }
 
       const updatedUser = await user.save();
 
       res.json({
         _id: updatedUser._id,
         name: updatedUser.name,
+        username: updatedUser.username,
         email: updatedUser.email,
         role: updatedUser.role,
+        isActive: updatedUser.isActive,
+      });
+    } else {
+      res.status(404);
+      throw new Error('User not found');
+    }
+  })
+);
+
+// @desc    Toggle user active/deactivated status (admin)
+// @route   PATCH /api/users/:id/status
+// @access  Private/Admin
+router.patch(
+  '/:id/status',
+  protect,
+  admin,
+  asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+
+    if (user) {
+      if (user._id.toString() === req.user._id.toString()) {
+        res.status(400);
+        throw new Error('You cannot deactivate your own account');
+      }
+
+      user.isActive = typeof req.body.isActive === 'boolean' ? req.body.isActive : !user.isActive;
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive,
+        message: updatedUser.isActive ? 'User account reactivated' : 'User account deactivated',
       });
     } else {
       res.status(404);
