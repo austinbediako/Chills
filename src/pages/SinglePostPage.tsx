@@ -230,7 +230,7 @@ const SinglePostPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       {/* Breadcrumbs */}
       <div className="mb-6 flex items-center text-sm text-dark-400 dark:text-light-400">
         <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400">Home</Link>

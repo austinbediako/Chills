@@ -205,7 +205,7 @@ const BlogDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 w-full min-w-0 overflow-x-hidden">
       {/* Breadcrumbs */}
       <div className="mb-4 sm:mb-6 flex flex-wrap items-center text-xs sm:text-sm text-dark-400 dark:text-light-400 min-w-0">
         <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400 shrink-0">Home</Link>
@@ -222,8 +222,7 @@ const BlogDetailPage: React.FC = () => {
         <span className="text-dark-300 dark:text-light-300 truncate inline-block max-w-[120px] sm:max-w-[200px] md:max-w-xs shrink-0">{submission.title}</span>
       </div>
 
-      {/* Article Header */}
-      <header className="mb-8">
+      <header className="mb-8 w-full min-w-0">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-4">
           <Link
             to={`/explore?category=${encodeURIComponent(submission.category?.name || '')}`}
@@ -242,7 +241,7 @@ const BlogDetailPage: React.FC = () => {
           </span>
         </div>
         
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-heading leading-tight text-dark-100 dark:text-light-100 mb-4 sm:mb-6 break-words">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-heading leading-tight text-dark-100 dark:text-light-100 mb-4 sm:mb-6 break-words w-full">
           {submission.title}
         </h1>
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-4 text-sm sm:text-base text-dark-400 dark:text-light-400">
@@ -298,7 +297,7 @@ const BlogDetailPage: React.FC = () => {
       )}
 
       {/* Featured Image */}
-      <div className="mb-8 overflow-hidden rounded-xl">
+      <div className="mb-8 overflow-hidden rounded-xl w-full">
         <img
           src={submission.image || 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80'}
           alt={submission.title}
@@ -317,7 +316,7 @@ const BlogDetailPage: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="kblog-article text-dark-100 dark:text-light-100 mb-8"
+        className="kblog-article w-full min-w-0 text-dark-100 dark:text-light-100 mb-8"
         dangerouslySetInnerHTML={{ __html: submission.content }}
       />
 
