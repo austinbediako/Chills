@@ -153,3 +153,27 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     throw new Error('User not found');
   }
 });
+
+// @desc    Check if a username is available
+// @route   GET /api/auth/check-username
+// @access  Private
+export const checkUsernameAvailability = asyncHandler(async (req, res) => {
+  const raw = String(req.query.username || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '');
+
+  if (raw.length < 3 || raw.length > 30) {
+    res.status(400);
+    throw new Error('Username must be 3-30 characters and contain only letters, numbers, and underscores');
+  }
+
+  const query = { username: raw };
+  if (req.user?._id) {
+    query._id = { $ne: req.user._id };
+  }
+
+  const exists = await User.exists(query);
+
+  res.json({ available: !exists });
+});

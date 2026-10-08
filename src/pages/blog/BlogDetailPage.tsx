@@ -205,21 +205,21 @@ const BlogDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6">
       {/* Breadcrumbs */}
-      <div className="mb-6 flex items-center text-sm text-dark-400 dark:text-light-400">
-        <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400">Home</Link>
-        <span className="mx-2">/</span>
-        <Link to="/explore" className="hover:text-primary-600 dark:hover:text-primary-400">Explore</Link>
-        <span className="mx-2">/</span>
+      <div className="mb-6 flex flex-wrap items-center text-sm text-dark-400 dark:text-light-400 min-w-0">
+        <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400 shrink-0">Home</Link>
+        <span className="mx-2 shrink-0">/</span>
+        <Link to="/explore" className="hover:text-primary-600 dark:hover:text-primary-400 shrink-0">Explore</Link>
+        <span className="mx-2 shrink-0">/</span>
         <Link 
           to={`/explore?category=${encodeURIComponent(submission.category?.name || '')}`} 
-          className="hover:text-primary-600 dark:hover:text-primary-400"
+          className="hover:text-primary-600 dark:hover:text-primary-400 shrink-0"
         >
           {submission.category?.name || 'Uncategorized'}
         </Link>
-        <span className="mx-2">/</span>
-        <span className="text-dark-300 dark:text-light-300 truncate">{submission.title}</span>
+        <span className="mx-2 shrink-0">/</span>
+        <span className="text-dark-300 dark:text-light-300 truncate min-w-0">{submission.title}</span>
       </div>
 
       {/* Article Header */}
@@ -242,7 +242,7 @@ const BlogDetailPage: React.FC = () => {
           </span>
         </div>
         
-        <h1 className="text-3xl font-bold font-heading sm:text-4xl md:text-5xl text-dark-100 dark:text-light-100 mb-6">
+        <h1 className="text-3xl font-bold font-heading sm:text-4xl md:text-5xl text-dark-100 dark:text-light-100 mb-6 break-words">
           {submission.title}
         </h1>
         <div className="flex flex-wrap items-center gap-4 text-dark-400 dark:text-light-400">
@@ -283,7 +283,7 @@ const BlogDetailPage: React.FC = () => {
         <div className="mb-8 p-4 border border-yellow-200 bg-yellow-50 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-700/50">
           <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400 mb-2">Reviewer Actions</h3>
           <p className="text-sm text-yellow-700 dark:text-yellow-500 mb-4">You have permission to review this pending document.</p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button onClick={() => handleReviewAction('PUBLISHED')} className="btn bg-green-600 text-white hover:bg-green-700 flex items-center">
               <CheckCircle size={16} className="mr-2" /> Approve & Publish
             </button>
@@ -307,7 +307,7 @@ const BlogDetailPage: React.FC = () => {
       </div>
 
       {/* Abstract */}
-      <div className="mb-8 p-6 bg-light-200 dark:bg-dark-200 rounded-xl italic border-l-4 border-primary-500 text-dark-300 dark:text-light-300">
+      <div className="mb-8 p-6 bg-light-200 dark:bg-dark-200 rounded-xl italic border-l-4 border-primary-500 text-dark-300 dark:text-light-300 break-words">
         <h4 className="font-bold font-heading mb-2 not-italic">Abstract</h4>
         {submission.abstract}
       </div>
@@ -338,24 +338,24 @@ const BlogDetailPage: React.FC = () => {
       </div>
 
       {/* Author Bio */}
-      <div className="mb-12 rounded-xl bg-light-200 p-6 dark:bg-dark-200">
+      <div className="mb-12 rounded-xl bg-light-200 p-6 dark:bg-dark-200 overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center">
-            <Link to={`/authors/${submission.author?.username || 'anonymous'}`}>
+          <div className="flex items-center min-w-0">
+            <Link to={`/authors/${submission.author?.username || 'anonymous'}`} className="shrink-0">
               <img
                 src={submission.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(submission.author?.name || 'Anonymous')}`}
                 alt={submission.author?.name || 'Author'}
-                className="h-20 w-20 rounded-full mr-6 object-cover ring-2 ring-primary-500/20 hover:scale-105 transition-transform"
+                className="h-20 w-20 rounded-full mr-4 sm:mr-6 object-cover ring-2 ring-primary-500/20 hover:scale-105 transition-transform"
               />
             </Link>
-            <div>
+            <div className="min-w-0">
               <Link 
                 to={`/authors/${submission.author?.username || 'anonymous'}`}
-                className="text-xl font-bold font-heading text-dark-100 dark:text-light-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                className="text-xl font-bold font-heading text-dark-100 dark:text-light-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors break-words"
               >
                 {submission.author?.name || 'Anonymous Author'}
               </Link>
-              <p className="text-dark-300 dark:text-light-300 mt-1 max-w-lg font-serif text-sm">
+              <p className="text-dark-300 dark:text-light-300 mt-1 max-w-lg font-serif text-sm break-words">
                 {submission.author?.bio || `Contributing author on KBlog.`}
               </p>
             </div>
@@ -371,10 +371,10 @@ const BlogDetailPage: React.FC = () => {
 
       {/* Article Actions */}
       <div className="mb-12 flex flex-wrap items-center justify-between gap-4 border-y border-light-300 py-4 dark:border-dark-300">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleLike}
-            className={`flex items-center space-x-2 rounded-full px-4 py-2 ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2 ${
               isLiked ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' 
               : 'bg-light-200 text-dark-500 hover:bg-primary-100 hover:text-primary-700 dark:bg-dark-300 dark:text-light-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400'
             }`}
@@ -384,7 +384,7 @@ const BlogDetailPage: React.FC = () => {
           </button>
           <button
             onClick={handleRepost}
-            className={`flex items-center space-x-2 rounded-full px-4 py-2 transition-colors ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2 transition-colors ${
               isReposted
                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-semibold'
                 : 'bg-light-200 text-dark-500 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-dark-300 dark:text-light-300 dark:hover:bg-emerald-950/30'
@@ -423,20 +423,20 @@ const BlogDetailPage: React.FC = () => {
         <div className="space-y-6">
           {comments.length > 0 ? (
             comments.map((comment) => (
-              <div key={comment._id} className="rounded-xl bg-light-200 p-6 dark:bg-dark-200">
+              <div key={comment._id} className="rounded-xl bg-light-200 p-6 dark:bg-dark-200 overflow-hidden">
                 <div className="mb-4 flex items-start justify-between">
-                  <div className="flex items-center">
+                  <div className="flex items-center min-w-0">
                     <Link 
                       to={`/authors/${comment.user?.username || comment.user?._id || 'anonymous'}`}
-                      className="flex items-center group"
+                      className="flex items-center group min-w-0"
                     >
                       <img
                         src={comment.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'Anonymous')}`}
                         alt={comment.user?.name || 'Comment author'}
-                        className="h-10 w-10 rounded-full mr-3 object-cover group-hover:scale-105 transition-transform"
+                        className="h-10 w-10 rounded-full mr-3 object-cover group-hover:scale-105 transition-transform shrink-0"
                       />
-                      <div>
-                        <h4 className="font-medium text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                      <div className="min-w-0">
+                        <h4 className="font-medium text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors break-words">
                           {comment.user?.name || 'Anonymous'}
                         </h4>
                         <p className="text-sm text-dark-400 dark:text-light-400">
@@ -450,7 +450,7 @@ const BlogDetailPage: React.FC = () => {
                     </Link>
                   </div>
                 </div>
-                <p className="text-dark-300 dark:text-light-300 mb-3 font-serif leading-relaxed">{comment.content}</p>
+                <p className="text-dark-300 dark:text-light-300 mb-3 font-serif leading-relaxed break-words">{comment.content}</p>
 
                 {/* Comment Actions: Like & Reply */}
                 <div className="flex items-center gap-4 text-xs text-dark-400 dark:text-light-400 pt-2 border-t border-light-300/60 dark:border-dark-300/60">
@@ -492,7 +492,7 @@ const BlogDetailPage: React.FC = () => {
                         }
                       }}
                       placeholder={`Reply to @${comment.user?.username || 'user'}...`}
-                      className="flex-1 px-3 py-1.5 text-xs rounded-full bg-light-100 dark:bg-dark-100 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      className="flex-1 min-w-0 px-3 py-1.5 text-xs rounded-full bg-light-100 dark:bg-dark-100 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-1 focus:ring-primary-500"
                     />
                     <button
                       onClick={() => handleSendReply(comment._id)}
@@ -514,12 +514,12 @@ const BlogDetailPage: React.FC = () => {
                           alt={reply.user?.name}
                           className="h-6 w-6 rounded-full object-cover shrink-0 mt-0.5"
                         />
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-dark-100 dark:text-light-100">{reply.user?.name}</span>
-                            <span className="text-[10px] text-dark-400 dark:text-light-400">@{reply.user?.username}</span>
+                            <span className="font-bold text-dark-100 dark:text-light-100 break-words">{reply.user?.name}</span>
+                            <span className="text-[10px] text-dark-400 dark:text-light-400 break-words">@{reply.user?.username}</span>
                           </div>
-                          <p className="text-dark-300 dark:text-light-300 font-serif mt-0.5 leading-relaxed">{reply.content}</p>
+                          <p className="text-dark-300 dark:text-light-300 font-serif mt-0.5 leading-relaxed break-words">{reply.content}</p>
                         </div>
                       </div>
                     ))}

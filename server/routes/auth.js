@@ -4,7 +4,8 @@ import {
   registerUser, 
   loginUser, 
   getUserProfile, 
-  updateUserProfile 
+  updateUserProfile,
+  checkUsernameAvailability
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -38,5 +39,8 @@ router.get('/profile', protect, getUserProfile);
 
 // Update user profile
 router.put('/profile', protect, updateUserProfile);
+
+// Check username availability
+router.get('/check-username', protect, checkUsernameAvailability);
 
 export default router;

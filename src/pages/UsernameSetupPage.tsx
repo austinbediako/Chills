@@ -16,6 +16,8 @@ const UsernameSetupPage: React.FC = () => {
   const [avatar, setAvatar] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
+  const [isChecking, setIsChecking] = useState(false);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   
   // Clean up auto-generated username prefix if present to give a clean slate
   useEffect(() => {
@@ -38,8 +40,47 @@ const UsernameSetupPage: React.FC = () => {
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
     setUsername(val);
+    setIsAvailable(null);
     setError('');
   };
+
+  // Debounced real-time username availability check
+  useEffect(() => {
+    if (username.length < 3) {
+      setIsChecking(false);
+      setIsAvailable(null);
+      setError('');
+      return;
+    }
+
+    let ignore = false;
+    setIsChecking(true);
+    setIsAvailable(null);
+    setError('');
+    const timeout = setTimeout(async () => {
+      try {
+        const token = user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');
+        const { data } = await axios.get(`/api/auth/check-username?username=${encodeURIComponent(username)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (ignore) return;
+        setIsAvailable(data.available);
+        if (!data.available) {
+          setError('That username is already taken.');
+        }
+      } catch (err: any) {
+        if (ignore) return;
+        setIsAvailable(null);
+      } finally {
+        if (!ignore) setIsChecking(false);
+      }
+    }, 300);
+
+    return () => {
+      ignore = true;
+      clearTimeout(timeout);
+    };
+  }, [username, user]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -234,16 +275,35 @@ const UsernameSetupPage: React.FC = () => {
                   type="text"
                   value={username}
                   onChange={handleUsernameChange}
-                  className={`input pl-10 py-3.5 text-lg w-full font-medium ${error ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                  className={`input pl-10 pr-10 py-3.5 text-lg w-full font-medium ${
+                    error ? 'border-red-500 ring-1 ring-red-500' : isAvailable === true ? 'border-emerald-500 ring-1 ring-emerald-500' : ''
+                  }`}
                   placeholder="username"
                   autoFocus
                   maxLength={30}
                 />
+                <div className="absolute right-3 flex items-center">
+                  {isChecking ? (
+                    <Loader2 size={18} className="animate-spin text-dark-400 dark:text-light-400" />
+                  ) : isAvailable === true ? (
+                    <Check size={20} className="text-emerald-500" />
+                  ) : isAvailable === false ? (
+                    <X size={20} className="text-red-500" />
+                  ) : null}
+                </div>
               </div>
+              {isAvailable === true && (
+                <p className="mt-2 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-1">
+                  <Check size={12} />
+                  This username is available
+                </p>
+              )}
               {error && <p className="mt-2 text-red-500 text-xs font-medium">{error}</p>}
-              <p className="mt-2 text-xs text-dark-400 dark:text-light-400">
-                Letters, numbers, and underscores only (min 3 chars). This will be your permanent handle.
-              </p>
+              {!error && isAvailable !== true && (
+                <p className="mt-2 text-xs text-dark-400 dark:text-light-400">
+                  Letters, numbers, and underscores only (min 3 chars). This will be your permanent handle.
+                </p>
+              )}
             </div>
 
             {/* ── Short Bio Input ── */}
@@ -264,7 +324,7 @@ const UsernameSetupPage: React.FC = () => {
             {/* Submit Button */}
             <button 
               type="submit" 
-              disabled={loading || isUploading || username.length < 3}
+              disabled={loading || isUploading || isChecking || username.length < 3 || isAvailable !== true}
               className="w-full rounded-full bg-dark-100 dark:bg-light-100 text-light-100 dark:text-dark-100 py-3.5 font-medium text-base hover:scale-[1.02] transition-transform duration-300 shadow-xl disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
