@@ -5,7 +5,9 @@ import {
   loginUser, 
   getUserProfile, 
   updateUserProfile,
-  checkUsernameAvailability
+  checkUsernameAvailability,
+  forgotPassword,
+  resetPassword
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -42,5 +44,23 @@ router.put('/profile', protect, updateUserProfile);
 
 // Check username availability
 router.get('/check-username', protect, checkUsernameAvailability);
+
+// Forgot password
+router.post(
+  '/forgotpassword',
+  [
+    check('email', 'Please include a valid email').isEmail(),
+  ],
+  forgotPassword
+);
+
+// Reset password
+router.put(
+  '/resetpassword/:resettoken',
+  [
+    check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
+  ],
+  resetPassword
+);
 
 export default router;

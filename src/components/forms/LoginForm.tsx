@@ -164,9 +164,9 @@ const LoginForm: React.FC = () => {
             Remember me
           </label>
         </div>
-        <a href="#" className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+        <Link to="/auth/forgot-password" className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
           Forgot password?
-        </a>
+        </Link>
       </div>
       
       {/* Submit button */}

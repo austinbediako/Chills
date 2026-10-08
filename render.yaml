@@ -21,3 +21,17 @@ services:
         value: 927742949392543
       - key: CLOUDINARY_API_SECRET
         value: ahg_in0hF20mN3XdkJwnC0geubQ
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_EMAIL
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: FROM_NAME
+        value: "Chills App"
+      - key: FROM_EMAIL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

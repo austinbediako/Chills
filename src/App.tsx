@@ -30,6 +30,8 @@ const BlogDetailPage = lazy(() => import('./pages/blog/BlogDetailPage'));
 const EditPostPage = lazy(() => import('./pages/admin/EditPostPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const Authors = lazy(() => import('./pages/Authors'));
@@ -168,6 +170,22 @@ function App() {
                     element={
                       <PublicRoute>
                         <RegisterPage />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="forgot-password"
+                    element={
+                      <PublicRoute>
+                        <ForgotPasswordPage />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="resetpassword/:resettoken"
+                    element={
+                      <PublicRoute>
+                        <ResetPasswordPage />
                       </PublicRoute>
                     }
                   />
