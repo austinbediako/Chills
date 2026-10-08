@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, ZoomIn, ZoomOut, RotateCcw, Check, Move, Camera, 
-  Sparkles, Eye, Image as ImageIcon 
+  Eye, Image as ImageIcon 
 } from 'lucide-react';
+import { useEscapeKey } from '../../hooks/useKeyboardShortcuts';
 
 export type CropMode = 'avatar' | 'banner';
 
@@ -28,45 +29,44 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   onClose,
   onSave,
 }) => {
+  // ESC key dismisses the crop modal
+  useEscapeKey(onClose, isOpen);
+
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [livePreviewUrl, setLivePreviewUrl] = useState<string>('');
+  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
 
   const imageRef = useRef<HTMLImageElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Viewport dimensions for modal
-  // Avatar: 300x300 (1:1 aspect)
-  // Banner: 540x180 (3:1 aspect)
   const isAvatar = mode === 'avatar';
-  const viewportWidth = isAvatar ? 300 : 540;
-  const viewportHeight = isAvatar ? 300 : 180;
+  const viewportWidth = isAvatar ? 260 : 540;
+  const viewportHeight = isAvatar ? 260 : 180;
 
   // Output canvas dimensions
   const outputWidth = isAvatar ? 600 : 1500;
   const outputHeight = isAvatar ? 600 : 500;
 
-  // Calculate base scale so image always completely covers the viewport without empty borders
+  // Calculate base scale so image always completely covers the viewport
   const getBaseScale = useCallback(() => {
-    if (!imageRef.current) return 1;
-    const { naturalWidth, naturalHeight } = imageRef.current;
-    if (!naturalWidth || !naturalHeight) return 1;
-    return Math.max(viewportWidth / naturalWidth, viewportHeight / naturalHeight);
-  }, [viewportWidth, viewportHeight]);
+    const width = naturalSize.width || imageRef.current?.naturalWidth || 1;
+    const height = naturalSize.height || imageRef.current?.naturalHeight || 1;
+    return Math.max(viewportWidth / width, viewportHeight / height);
+  }, [naturalSize.width, naturalSize.height, viewportWidth, viewportHeight]);
 
-  // Clamp position so image can never be dragged beyond viewport borders
+  // Clamp position so image cannot be dragged beyond viewport borders
   const clampPosition = useCallback(
     (newX: number, newY: number, currentZoom: number) => {
-      if (!imageRef.current) return { x: 0, y: 0 };
-      const baseScale = getBaseScale();
+      const width = naturalSize.width || imageRef.current?.naturalWidth || 1;
+      const height = naturalSize.height || imageRef.current?.naturalHeight || 1;
+      const baseScale = Math.max(viewportWidth / width, viewportHeight / height);
       const currentScale = baseScale * currentZoom;
-      const currentWidth = imageRef.current.naturalWidth * currentScale;
-      const currentHeight = imageRef.current.naturalHeight * currentScale;
+      const currentWidth = width * currentScale;
+      const currentHeight = height * currentScale;
 
       const maxDeltaX = Math.max(0, (currentWidth - viewportWidth) / 2);
       const maxDeltaY = Math.max(0, (currentHeight - viewportHeight) / 2);
@@ -76,57 +76,33 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
       return { x: clampedX, y: clampedY };
     },
-    [getBaseScale, viewportWidth, viewportHeight]
+    [naturalSize.width, naturalSize.height, viewportWidth, viewportHeight]
   );
 
-  // Reset when modal opens or image changes
+  // Preload and verify image on source change or open
   useEffect(() => {
-    if (isOpen) {
-      setZoom(1);
-      setPosition({ x: 0, y: 0 });
-      setIsDragging(false);
-      setImageLoaded(false);
-      setIsSaving(false);
+    if (!isOpen || !imageSrc) return;
+
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+    setIsDragging(false);
+    setIsSaving(false);
+
+    const testImg = new Image();
+    testImg.onload = () => {
+      setNaturalSize({ width: testImg.naturalWidth, height: testImg.naturalHeight });
+      setImageLoaded(true);
+    };
+    testImg.onerror = () => {
+      setImageLoaded(true); // Don't block user if browser cached
+    };
+    testImg.src = imageSrc;
+
+    if (testImg.complete && testImg.naturalWidth > 0) {
+      setNaturalSize({ width: testImg.naturalWidth, height: testImg.naturalHeight });
+      setImageLoaded(true);
     }
   }, [isOpen, imageSrc]);
-
-  // Update live preview canvas whenever position, zoom, or image changes
-  const updatePreviewCanvas = useCallback(() => {
-    if (!imageRef.current || !previewCanvasRef.current || !imageLoaded) return;
-    const canvas = previewCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = outputWidth;
-    canvas.height = outputHeight;
-
-    const baseScale = getBaseScale();
-    const currentScale = baseScale * zoom;
-    const ratio = outputWidth / viewportWidth;
-
-    const img = imageRef.current;
-    const renderWidth = img.naturalWidth * currentScale * ratio;
-    const renderHeight = img.naturalHeight * currentScale * ratio;
-
-    const drawX = (outputWidth - renderWidth) / 2 + position.x * ratio;
-    const drawY = (outputHeight - renderHeight) / 2 + position.y * ratio;
-
-    ctx.clearRect(0, 0, outputWidth, outputHeight);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, drawX, drawY, renderWidth, renderHeight);
-
-    try {
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
-      setLivePreviewUrl(dataUrl);
-    } catch {
-      // Ignored if tainted
-    }
-  }, [imageLoaded, outputWidth, outputHeight, getBaseScale, zoom, viewportWidth, position.x, position.y]);
-
-  useEffect(() => {
-    updatePreviewCanvas();
-  }, [updatePreviewCanvas]);
 
   // Dragging handlers (Mouse)
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -189,24 +165,34 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     setPosition({ x: 0, y: 0 });
   };
 
-  // Save handler
+  // Save handler - crops and returns both Blob and preview URL
   const handleSaveCropped = async () => {
-    if (!imageRef.current) return;
     try {
       setIsSaving(true);
+
+      const img = imageRef.current || new Image();
+      if (!imageRef.current) {
+        img.src = imageSrc;
+        await new Promise((res) => {
+          img.onload = res;
+        });
+      }
+
       const canvas = document.createElement('canvas');
       canvas.width = outputWidth;
       canvas.height = outputHeight;
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Could not get canvas context');
 
-      const baseScale = getBaseScale();
+      const width = naturalSize.width || img.naturalWidth || outputWidth;
+      const height = naturalSize.height || img.naturalHeight || outputHeight;
+
+      const baseScale = Math.max(viewportWidth / width, viewportHeight / height);
       const currentScale = baseScale * zoom;
       const ratio = outputWidth / viewportWidth;
 
-      const img = imageRef.current;
-      const renderWidth = img.naturalWidth * currentScale * ratio;
-      const renderHeight = img.naturalHeight * currentScale * ratio;
+      const renderWidth = width * currentScale * ratio;
+      const renderHeight = height * currentScale * ratio;
 
       const drawX = (outputWidth - renderWidth) / 2 + position.x * ratio;
       const drawY = (outputHeight - renderHeight) / 2 + position.y * ratio;
@@ -215,20 +201,38 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, drawX, drawY, renderWidth, renderHeight);
 
-      canvas.toBlob(
-        async (blob) => {
-          if (!blob) {
-            setIsSaving(false);
-            return;
-          }
-          const finalPreviewUrl = canvas.toDataURL('image/jpeg', 0.92);
-          await onSave(blob, finalPreviewUrl);
-          setIsSaving(false);
-          onClose();
-        },
-        'image/jpeg',
-        0.92
-      );
+      // Convert to blob with dataURL fallback
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => {
+            if (b) {
+              resolve(b);
+            } else {
+              try {
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                const byteString = atob(dataUrl.split(',')[1]);
+                const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                  ia[i] = byteString.charCodeAt(i);
+                }
+                resolve(new Blob([ab], { type: mimeString }));
+              } catch (err) {
+                reject(err);
+              }
+            }
+          },
+          'image/jpeg',
+          0.92
+        );
+      });
+
+      const finalPreviewUrl = canvas.toDataURL('image/jpeg', 0.92);
+      onClose();
+      setIsSaving(false);
+      // Run background upload lazily
+      onSave(blob, finalPreviewUrl);
     } catch (err) {
       console.error('Failed to crop and save image:', err);
       setIsSaving(false);
@@ -237,14 +241,20 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
   if (!isOpen) return null;
 
+  const currentScale = getBaseScale() * zoom;
+
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto bg-dark-900/80 backdrop-blur-md">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto bg-dark-900/80 backdrop-blur-md"
+        onClick={onClose}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
+          onClick={(e) => e.stopPropagation()}
           className="relative w-full max-w-xl bg-light-100 dark:bg-dark-100 rounded-2xl shadow-2xl border border-light-300 dark:border-dark-300 overflow-hidden my-6"
         >
           {/* Header */}
@@ -259,8 +269,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                 </h3>
                 <p className="text-xs text-dark-400 dark:text-light-400">
                   {isAvatar
-                    ? 'Drag to position and zoom to fit the profile ring'
-                    : 'Drag and zoom to frame your 3:1 wide banner'}
+                    ? 'Drag to position and zoom to fit the profile circle'
+                    : 'Drag and zoom to frame your wide 3:1 cover banner'}
                 </p>
               </div>
             </div>
@@ -272,9 +282,6 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
               <X size={18} />
             </button>
           </div>
-
-          {/* Hidden reference canvas for live high-res rendering */}
-          <canvas ref={previewCanvasRef} className="hidden" />
 
           {/* Modal Body */}
           <div className="p-5 space-y-5">
@@ -292,9 +299,9 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                   onTouchEnd={handleTouchEnd}
                   onWheel={handleWheel}
                   style={{
-                    width: isAvatar ? 'min(260px, 100%)' : '100%',
+                    width: isAvatar ? '260px' : '100%',
                     maxWidth: isAvatar ? '260px' : '540px',
-                    height: isAvatar ? 'min(260px, 65vw)' : '180px',
+                    height: isAvatar ? '260px' : '180px',
                     aspectRatio: isAvatar ? '1/1' : '3/1',
                   }}
                   className={`relative overflow-hidden ${
@@ -306,18 +313,16 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                     ref={imageRef}
                     src={imageSrc}
                     alt="Source"
-                    crossOrigin="anonymous"
-                    onLoad={() => {
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
                       setImageLoaded(true);
-                      handleReset();
                     }}
                     style={{
                       position: 'absolute',
                       top: '50%',
                       left: '50%',
-                      transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px)) scale(${
-                        getBaseScale() * zoom
-                      })`,
+                      transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px)) scale(${currentScale})`,
                       transformOrigin: 'center center',
                       maxWidth: 'none',
                       maxHeight: 'none',
@@ -330,7 +335,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                   {isAvatar ? (
                     /* Circular Mask Guide for Profile Photo */
                     <div className="absolute inset-0 pointer-events-none">
-                      <div className="w-full h-full rounded-full border-2 border-primary-500/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"></div>
+                      <div className="w-full h-full rounded-full border-2 border-primary-500/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
                       {/* Grid crosshair guidelines */}
                       <div className="absolute inset-0 rounded-full border border-white/20 grid grid-cols-3 grid-rows-3 pointer-events-none">
                         <div className="border-r border-b border-white/15"></div>
@@ -339,8 +344,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                         <div className="border-r border-b border-white/15"></div>
                         <div className="border-r border-b border-white/15"></div>
                         <div className="border-b border-white/15"></div>
-                        <div className="border-r border-white/15"></div>
-                        <div className="border-r border-white/15"></div>
+                        <div className="border-r border-b border-white/15"></div>
+                        <div className="border-r border-b border-white/15"></div>
                         <div></div>
                       </div>
                     </div>
@@ -354,12 +359,12 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                         <div className="border-r border-b border-white/20"></div>
                         <div className="border-r border-b border-white/20"></div>
                         <div className="border-b border-white/20"></div>
-                        <div className="border-r border-white/20"></div>
-                        <div className="border-r border-white/20"></div>
+                        <div className="border-r border-b border-white/20"></div>
+                        <div className="border-r border-b border-white/20"></div>
                         <div></div>
                       </div>
                       {/* Avatar preview silhouette in bottom left */}
-                      <div className="absolute bottom-2 left-4 w-14 h-14 rounded-full border-2 border-white/80 bg-black/40 flex items-center justify-center text-[9px] text-white/90 font-bold backdrop-blur-xs">
+                      <div className="absolute bottom-2 left-4 w-12 h-12 rounded-full border-2 border-white/80 bg-black/40 flex items-center justify-center text-[9px] text-white/90 font-bold backdrop-blur-xs">
                         Avatar
                       </div>
                     </div>
@@ -432,12 +437,12 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
               </div>
             </div>
 
-            {/* 3. Live Page Mockup Preview ("Never have to guess how the image will look") */}
+            {/* 3. Real-Time Live Preview Mockup (Synchronized with adjustments) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-dark-400 dark:text-light-400">
                 <span className="font-semibold flex items-center gap-1 text-dark-200 dark:text-light-200">
                   <Eye size={13} className="text-primary-500" />
-                  Live Preview on Your Author Page
+                  Live Preview on Your Page
                 </span>
                 <span className="text-[11px] font-mono text-dark-400 dark:text-light-400">
                   {isAvatar ? 'Circular 1:1' : 'Wide Banner 3:1'}
@@ -449,15 +454,21 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                 {isAvatar ? (
                   /* Avatar in Profile Header context */
                   <div className="p-4 flex items-center gap-4">
-                    <div className="relative shrink-0">
+                    <div className="relative shrink-0 w-16 h-16 rounded-full overflow-hidden border-2 border-primary-500 shadow-md bg-dark-900">
                       <img
-                        src={livePreviewUrl || imageSrc}
+                        src={imageSrc}
                         alt="Preview"
-                        className="w-16 h-16 rounded-full object-cover border-2 border-primary-500 shadow-md"
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: `translate(calc(-50% + ${position.x * (64 / viewportWidth)}px), calc(-50% + ${position.y * (64 / viewportHeight)}px)) scale(${currentScale * (64 / viewportWidth)})`,
+                          transformOrigin: 'center center',
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                          userSelect: 'none',
+                        }}
                       />
-                      <div className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-primary-500 text-white">
-                        <Check size={10} />
-                      </div>
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-dark-100 dark:text-light-100 truncate">
@@ -467,7 +478,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                         @{authorUsername}
                       </p>
                       <span className="inline-block mt-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300">
-                        Profile Photo Ready
+                        Profile Photo Live
                       </span>
                     </div>
                   </div>
@@ -476,12 +487,21 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                   <div>
                     <div className="relative h-24 sm:h-28 w-full bg-dark-900 overflow-hidden">
                       <img
-                        src={livePreviewUrl || imageSrc}
+                        src={imageSrc}
                         alt="Banner Preview"
-                        className="w-full h-full object-cover"
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: `translate(calc(-50% + ${position.x * (480 / viewportWidth)}px), calc(-50% + ${position.y * (100 / viewportHeight)}px)) scale(${currentScale * (480 / viewportWidth)})`,
+                          transformOrigin: 'center center',
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                          userSelect: 'none',
+                        }}
                       />
                     </div>
-                    <div className="px-4 pb-3 flex items-end justify-between -mt-6">
+                    <div className="px-4 pb-3 flex items-end justify-between -mt-6 relative z-10">
                       <img
                         src={
                           currentAvatar ||
@@ -491,7 +511,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                         className="w-12 h-12 rounded-full object-cover border-2 border-light-100 dark:border-dark-100 shadow-md bg-dark-300"
                       />
                       <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 mb-1">
-                        Wide Banner Ready
+                        Wide Banner Live
                       </span>
                     </div>
                   </div>
@@ -513,8 +533,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             <button
               type="button"
               onClick={handleSaveCropped}
-              disabled={isSaving || !imageLoaded}
-              className="px-5 py-2 text-xs font-bold rounded-full bg-primary-500 hover:bg-primary-600 text-white shadow-md flex items-center gap-1.5 transition-all disabled:opacity-50"
+              disabled={isSaving || !imageSrc}
+              className="px-5 py-2 text-xs font-bold rounded-full bg-primary-600 hover:bg-primary-700 text-white shadow-md flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? (
                 <>

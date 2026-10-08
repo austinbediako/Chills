@@ -4,13 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Calendar, Heart, Repeat, MessageSquare, Clock, 
   Settings, Check, UserPlus, UserMinus, ShieldCheck, Sparkles,
-  BookOpen, Bookmark, Camera, Pencil, Menu
+  BookOpen, Bookmark, Camera, Pencil, Menu, Loader2, X
 } from 'lucide-react';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
 import { useAuth } from '../hooks/useAuth';
 import { showNotification, toggleSidebar } from '../redux/slices/uiSlice';
 import ImageCropModal, { CropMode } from '../components/common/ImageCropModal';
+import FollowersModal, { FollowModalTab } from '../components/profile/FollowersModal';
 
 interface AuthorProfile {
   _id: string;
@@ -20,6 +21,7 @@ interface AuthorProfile {
   coverImage?: string;
   bio?: string;
   role?: string;
+  isVerified?: boolean;
   gender?: string;
   createdAt: string;
   followersCount: number;
@@ -98,6 +100,18 @@ const AuthorProfilePage: React.FC = () => {
     mode: 'avatar',
     imageSrc: '',
   });
+
+  const [followModalOpen, setFollowModalOpen] = useState(false);
+  const [followModalTab, setFollowModalTab] = useState<FollowModalTab>('followers');
+
+  // Background Lazy Upload State
+  const [backgroundUpload, setBackgroundUpload] = useState<{
+    active: boolean;
+    type: 'avatar' | 'banner';
+    progress: number;
+    status: 'uploading' | 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   const isOwner = Boolean(
     author?.isSelf ||
@@ -266,19 +280,29 @@ const AuthorProfilePage: React.FC = () => {
     e.target.value = '';
   };
 
-  // 5. Handle Cropped Image Save & Upload
+  // 5. Handle Cropped Image Save & Background Lazy Upload
   const handleCropSave = async (croppedBlob: Blob, previewUrl: string) => {
     const mode = cropModalState.mode;
     const folder = mode === 'avatar' ? 'avatars' : 'covers';
+    const label = mode === 'avatar' ? 'profile photo' : 'cover banner';
 
-    // 1. Instant optimistic UI update
+    // 1. Instant optimistic UI update on page
     if (mode === 'avatar') {
       setAuthor((prev) => (prev ? { ...prev, avatar: previewUrl } : null));
     } else {
       setAuthor((prev) => (prev ? { ...prev, coverImage: previewUrl } : null));
     }
 
-    // 2. Upload to server storage
+    // 2. Start Background Lazy Upload Status
+    setBackgroundUpload({
+      active: true,
+      type: mode,
+      progress: 15,
+      status: 'uploading',
+      message: `Uploading ${label} in background...`,
+    });
+
+    // 3. Upload to server storage with real-time progress
     const formData = new FormData();
     formData.append('image', croppedBlob, `${mode}-${Date.now()}.jpg`);
 
@@ -290,16 +314,24 @@ const AuthorProfilePage: React.FC = () => {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setBackgroundUpload((prev) =>
+              prev ? { ...prev, progress: Math.min(95, Math.max(15, percent)) } : null
+            );
+          }
+        },
       });
 
       const uploadedUrl = res.data?.imageUrl;
       if (!uploadedUrl) throw new Error('No image URL returned from upload server');
 
-      // 3. Update User profile in database & Redux auth state
+      // 4. Update User profile in database & Redux auth state
       const updatePayload = mode === 'avatar' ? { avatar: uploadedUrl } : { coverImage: uploadedUrl };
       await updateUserProfile(updatePayload);
 
-      // 4. Update author state with permanent server URL
+      // 5. Update author state with permanent server URL
       setAuthor((prev) => {
         if (!prev) return null;
         return mode === 'avatar'
@@ -307,17 +339,36 @@ const AuthorProfilePage: React.FC = () => {
           : { ...prev, coverImage: uploadedUrl };
       });
 
+      // 6. Success notification & status confirmation
+      setBackgroundUpload({
+        active: true,
+        type: mode,
+        progress: 100,
+        status: 'success',
+        message: `${mode === 'avatar' ? 'Profile photo' : 'Cover banner'} updated successfully!`,
+      });
+
       dispatch(
         showNotification({
-          message:
-            mode === 'avatar'
-              ? 'Profile photo updated successfully!'
-              : 'Cover banner updated successfully!',
+          message: `${mode === 'avatar' ? 'Profile photo' : 'Cover banner'} updated successfully!`,
           type: 'success',
         })
       );
+
+      // Auto-dismiss after 3.5s
+      setTimeout(() => {
+        setBackgroundUpload(null);
+      }, 3500);
     } catch (err: any) {
       console.error(`Failed to upload ${mode}:`, err);
+      setBackgroundUpload({
+        active: true,
+        type: mode,
+        progress: 0,
+        status: 'error',
+        message: err.response?.data?.message || `Failed to update ${mode}. Reverting...`,
+      });
+
       dispatch(
         showNotification({
           message: err.response?.data?.message || `Failed to update ${mode}. Please try again.`,
@@ -326,6 +377,10 @@ const AuthorProfilePage: React.FC = () => {
       );
       // Revert optimistic update by refetching author profile
       fetchAuthorProfile();
+
+      setTimeout(() => {
+        setBackgroundUpload(null);
+      }, 4000);
     }
   };
 
@@ -431,10 +486,13 @@ const AuthorProfilePage: React.FC = () => {
           <div className="min-w-0 truncate">
             <h2 className="text-base sm:text-lg font-bold font-heading text-dark-100 dark:text-light-100 leading-tight flex items-center gap-1.5 truncate">
               <span className="truncate">{author.name}</span>
-              {author.role === 'admin' && (
-                <span className="text-primary-500 shrink-0" title="KBlog Staff / Administrator">
-                  <ShieldCheck size={16} />
-                </span>
+              {(author.isVerified || author.role === 'admin' || author.role === 'author') && (
+                <img
+                  src="/badge.svg"
+                  alt="Verified"
+                  className="w-4 h-4 shrink-0 inline-block"
+                  title="Verified Creator"
+                />
               )}
             </h2>
             <span className="text-xs text-dark-400 dark:text-light-400">
@@ -588,11 +646,14 @@ const AuthorProfilePage: React.FC = () => {
         {/* Name and Handle */}
         <div className="space-y-1">
           <h1 className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 flex items-center gap-2">
-            {author.name}
-            {author.role === 'admin' && (
-              <span className="text-primary-500" title="Administrator">
-                <ShieldCheck size={20} />
-              </span>
+            <span>{author.name}</span>
+            {(author.isVerified || author.role === 'admin' || author.role === 'author') && (
+              <img
+                src="/badge.svg"
+                alt="Verified"
+                className="w-5 h-5 shrink-0 inline-block"
+                title="Verified Creator"
+              />
             )}
           </h1>
           <p className="text-sm text-dark-400 dark:text-light-400 font-mono">
@@ -611,7 +672,7 @@ const AuthorProfilePage: React.FC = () => {
           </p>
         )}
 
-        {/* Meta details row: Joined date, stories count */}
+        {/* Meta details row: Joined date, stories count, story likes received */}
         <div className="mt-3 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-dark-400 dark:text-light-400">
           <div className="flex items-center gap-1.5">
             <Calendar size={14} />
@@ -621,22 +682,42 @@ const AuthorProfilePage: React.FC = () => {
             <BookOpen size={14} />
             <span>{author.storiesCount} published {author.storiesCount === 1 ? 'article' : 'articles'}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-primary-600 dark:text-primary-400">
-            <Sparkles size={14} />
+          <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-medium">
+            <Heart size={14} className="fill-rose-500 text-rose-500 shrink-0" />
             <span>{author.totalLikesReceived} total story likes received</span>
           </div>
         </div>
 
-        {/* Social Counts: Following & Followers (like X) */}
+        {/* Social Counts: Following & Followers (Clickable -> Opens Followers/Following Modal) */}
         <div className="mt-4 flex items-center gap-5 text-sm pt-2 border-t border-light-200/60 dark:border-dark-300/60">
-          <div className="flex items-center gap-1.5 cursor-pointer hover:underline">
-            <span className="font-bold text-dark-100 dark:text-light-100">{author.followingCount}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setFollowModalTab('following');
+              setFollowModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 cursor-pointer hover:underline text-left group"
+          >
+            <span className="font-bold text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+              {author.followingCount}
+            </span>
             <span className="text-dark-400 dark:text-light-400">Following</span>
-          </div>
-          <div className="flex items-center gap-1.5 cursor-pointer hover:underline">
-            <span className="font-bold text-dark-100 dark:text-light-100">{followersCountState}</span>
-            <span className="text-dark-400 dark:text-light-400">{followersCountState === 1 ? 'Follower' : 'Followers'}</span>
-          </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFollowModalTab('followers');
+              setFollowModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 cursor-pointer hover:underline text-left group"
+          >
+            <span className="font-bold text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+              {followersCountState}
+            </span>
+            <span className="text-dark-400 dark:text-light-400">
+              {followersCountState === 1 ? 'Follower' : 'Followers'}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -909,6 +990,81 @@ const AuthorProfilePage: React.FC = () => {
         onClose={() => setCropModalState((prev) => ({ ...prev, isOpen: false }))}
         onSave={handleCropSave}
       />
+
+      {/* Followers & Following Modal (Matching reference with tabs) */}
+      <FollowersModal
+        isOpen={followModalOpen}
+        onClose={() => setFollowModalOpen(false)}
+        authorId={author._id}
+        authorName={author.name}
+        authorUsername={author.username}
+        initialTab={followModalTab}
+      />
+
+      {/* Background Lazy Upload Status (Confirmation & Progress Modal / Toast) */}
+      <AnimatePresence>
+        {backgroundUpload?.active && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className={`fixed bottom-6 right-6 z-50 max-w-sm w-auto sm:min-w-[320px] p-3.5 rounded-2xl shadow-2xl border backdrop-blur-2xl flex items-center gap-3 ${
+              backgroundUpload.status === 'success'
+                ? 'bg-emerald-50/95 dark:bg-emerald-950/90 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 shadow-emerald-500/10'
+                : backgroundUpload.status === 'error'
+                ? 'bg-rose-50/95 dark:bg-rose-950/90 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-100 shadow-rose-500/10'
+                : 'bg-light-100/95 dark:bg-dark-200/95 border-light-300 dark:border-dark-300 text-dark-100 dark:text-light-100 shadow-black/10'
+            }`}
+          >
+            {backgroundUpload.status === 'uploading' && (
+              <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400">
+                <Loader2 size={16} className="animate-spin" />
+              </div>
+            )}
+            {backgroundUpload.status === 'success' && (
+              <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500 text-white">
+                <Check size={16} />
+              </div>
+            )}
+            {backgroundUpload.status === 'error' && (
+              <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-rose-500 text-white">
+                <X size={16} />
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0 pr-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-bold truncate">
+                  {backgroundUpload.message}
+                </p>
+                {backgroundUpload.status === 'uploading' && (
+                  <span className="text-[10px] font-mono font-bold text-primary-500 shrink-0">
+                    {backgroundUpload.progress}%
+                  </span>
+                )}
+              </div>
+              {backgroundUpload.status === 'uploading' && (
+                <div className="w-full bg-light-300 dark:bg-dark-300 h-1.5 rounded-full mt-2 overflow-hidden">
+                  <motion.div
+                    className="bg-primary-500 h-full rounded-full"
+                    animate={{ width: `${backgroundUpload.progress}%` }}
+                    transition={{ ease: 'easeOut', duration: 0.2 }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setBackgroundUpload(null)}
+              className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10 opacity-60 hover:opacity-100 transition-opacity"
+              aria-label="Dismiss status"
+            >
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

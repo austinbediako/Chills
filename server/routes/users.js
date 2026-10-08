@@ -320,6 +320,70 @@ router.post(
   })
 );
 
+// @desc    Get author's followers
+// @route   GET /api/users/:identifier/followers
+// @access  Public (optionalAuth)
+router.get(
+  '/:identifier/followers',
+  optionalAuth,
+  asyncHandler(async (req, res) => {
+    const author = await findUserByIdentifier(req.params.identifier);
+    if (!author) {
+      res.status(404);
+      throw new Error('Author not found');
+    }
+
+    const currentUserId = req.user?._id ? req.user._id.toString() : null;
+    const followers = await User.find({ _id: { $in: author.followers || [] } })
+      .select('name username avatar bio role isVerified followers following')
+      .lean();
+
+    const formatted = followers.map((u) => ({
+      ...u,
+      isFollowing: currentUserId
+        ? Array.isArray(u.followers) && u.followers.some((f) => f.toString() === currentUserId)
+        : false,
+      isSelf: currentUserId ? u._id.toString() === currentUserId : false,
+      followersCount: Array.isArray(u.followers) ? u.followers.length : 0,
+      followingCount: Array.isArray(u.following) ? u.following.length : 0,
+    }));
+
+    res.json(formatted);
+  })
+);
+
+// @desc    Get author's following
+// @route   GET /api/users/:identifier/following
+// @access  Public (optionalAuth)
+router.get(
+  '/:identifier/following',
+  optionalAuth,
+  asyncHandler(async (req, res) => {
+    const author = await findUserByIdentifier(req.params.identifier);
+    if (!author) {
+      res.status(404);
+      throw new Error('Author not found');
+    }
+
+    const currentUserId = req.user?._id ? req.user._id.toString() : null;
+    const following = await User.find({ _id: { $in: author.following || [] } })
+      .select('name username avatar bio role isVerified followers following')
+      .lean();
+
+    const formatted = following.map((u) => ({
+      ...u,
+      isFollowing: currentUserId
+        ? Array.isArray(u.followers) && u.followers.some((f) => f.toString() === currentUserId)
+        : false,
+      isSelf: currentUserId ? u._id.toString() === currentUserId : false,
+      followersCount: Array.isArray(u.followers) ? u.followers.length : 0,
+      followingCount: Array.isArray(u.following) ? u.following.length : 0,
+    }));
+
+    res.json(formatted);
+  })
+);
+
 // @desc    Get author's posts (published stories)
 // @route   GET /api/users/:identifier/posts
 // @access  Public

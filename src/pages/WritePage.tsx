@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { 
-  ArrowLeft, CheckCircle, Clock, Image as ImageIcon, X, Eye, Loader2, AlertCircle, Tag, Hash, Folder
+  ArrowLeft, CheckCircle, Clock, Image as ImageIcon, X, Eye, Loader2, AlertCircle, Tag, Hash, Folder, Keyboard
 } from 'lucide-react';
 import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -11,6 +11,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import Logo from '../components/common/Logo';
 import { useSubmissions } from '../hooks/useSubmissions';
+import { useWritingShortcuts, useEscapeKey, getModifierKeyLabel } from '../hooks/useKeyboardShortcuts';
+import KeyboardShortcutsModal from '../components/common/KeyboardShortcutsModal';
 import '../styles/article.css';
 
 // --- Register Quill modules and attributors ONCE at module scope ---
