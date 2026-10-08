@@ -5,7 +5,6 @@ import {
   Search,
   ArrowLeft,
   MoreHorizontal,
-  Sparkles,
   TrendingUp,
   User,
   Users,
@@ -654,7 +653,7 @@ const BlogListPage: React.FC = () => {
               className="p-2.5 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 text-dark-400 dark:text-light-400 hover:text-dark-100 dark:hover:text-light-100 transition-colors shrink-0"
               title="Social Feed Timeline"
             >
-              <Sparkles size={19} />
+              <Flame size={19} />
             </button>
           </div>
 

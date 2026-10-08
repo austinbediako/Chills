@@ -89,9 +89,11 @@ function App() {
                   <Route
                     path="feed"
                     element={
-                      <ErrorBoundary>
-                        <SocialFeedPage />
-                      </ErrorBoundary>
+                      <ProtectedRoute>
+                        <ErrorBoundary>
+                          <SocialFeedPage />
+                        </ErrorBoundary>
+                      </ProtectedRoute>
                     }
                   />
 
