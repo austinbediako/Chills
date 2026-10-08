@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -7,7 +8,30 @@ export default defineConfig(({ mode }) => {
   const apiUrl = process.env.API_URL || env.API_URL || process.env.VITE_API_URL || env.VITE_API_URL || '';
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg'],
+        manifest: {
+          name: 'KBlog',
+          short_name: 'KBlog',
+          description: 'Discover and share ideas on KBlog.',
+          theme_color: '#ffffff',
+          icons: [
+            {
+              src: 'favicon.svg',
+              sizes: '192x192 512x512',
+              type: 'image/svg+xml',
+              purpose: 'any maskable'
+            }
+          ]
+        },
+        devOptions: {
+          enabled: true
+        }
+      })
+    ],
     envPrefix: ['VITE_', 'API_'],
     define: {
       'import.meta.env.API_URL': JSON.stringify(apiUrl),

@@ -1,8 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download, X } from 'lucide-react';
 
 const PublicHomePage: React.FC = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the default mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+      // Update UI notify the user they can install the PWA
+      setShowInstallBanner(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowInstallBanner(false);
+    }
+    // We've used the prompt, and can't use it again, throw it away
+    setDeferredPrompt(null);
+  };
+
   return (
     <div className="relative min-h-[calc(100vh-4rem)] w-full flex flex-col justify-center items-center px-4 overflow-hidden pt-24 pb-20">
       
@@ -80,6 +111,45 @@ const PublicHomePage: React.FC = () => {
           </div>
         </div>
       </motion.div>
+      
+      {/* PWA Install Banner */}
+      <AnimatePresence>
+        {showInstallBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm"
+          >
+            <div className="bg-dark-100 dark:bg-light-100 text-light-100 dark:text-dark-100 p-4 rounded-2xl shadow-2xl flex flex-col gap-3 border border-dark-200/20 dark:border-light-200/20">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary-500 text-white p-2 rounded-xl">
+                    <Download size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold font-heading text-sm">Install KBlog App</h4>
+                    <p className="text-xs opacity-80">Read and write offline, directly from your home screen.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowInstallBanner(false)}
+                  className="p-1 opacity-50 hover:opacity-100 transition-opacity"
+                  aria-label="Dismiss"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <button 
+                onClick={handleInstallClick}
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-xl font-bold text-sm transition-colors shadow-sm"
+              >
+                Download App
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
     </div>
   );
