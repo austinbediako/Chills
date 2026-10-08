@@ -518,11 +518,11 @@ const BlogListPage: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* HORIZONTAL TABS */}
+          {/* HORIZONTAL TABS - 100% Responsive, Zero Horizontal Scroll or Swipe */}
           {/* ========================================================================= */}
           {isSearchActive ? (
-            /* MODE 1: SEARCH RESULTS TABS (Top, Latest, People, Media, Topics) - Exact match to user Image 1 */
-            <div className="flex items-center overflow-x-auto no-scrollbar border-t border-light-300 dark:border-dark-300 px-2">
+            /* MODE 1: SEARCH RESULTS TABS (Top, Latest, People, Media, Topics) */
+            <div className="w-full flex items-center border-t border-light-300 dark:border-dark-300 overflow-hidden">
               {(
                 [
                   { id: 'top', label: 'Top' },
@@ -537,21 +537,21 @@ const BlogListPage: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => handleSelectSearchTab(tab.id)}
-                    className="flex-1 min-w-[76px] py-3 text-center text-sm font-semibold transition-colors relative hover:bg-light-200/50 dark:hover:bg-dark-200/40"
+                    className="flex-1 min-w-0 py-3 text-center text-xs sm:text-sm font-semibold transition-colors relative hover:bg-light-200/50 dark:hover:bg-dark-200/40"
                   >
                     <span
-                      className={
+                      className={`truncate block px-0.5 ${
                         isActive
-                            ? 'text-dark-100 dark:text-light-100 font-bold'
-                            : 'text-dark-400 dark:text-light-400 font-medium'
-                      }
+                          ? 'text-dark-100 dark:text-light-100 font-bold'
+                          : 'text-dark-400 dark:text-light-400 font-medium'
+                      }`}
                     >
                       {tab.label}
                     </span>
                     {isActive && (
                       <motion.div
                         layoutId="searchActiveIndicator"
-                        className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-full mx-4"
+                        className="absolute bottom-0 left-1 right-1 h-1 bg-primary-500 rounded-full"
                       />
                     )}
                   </button>
@@ -559,15 +559,15 @@ const BlogListPage: React.FC = () => {
               })}
             </div>
           ) : (
-            /* MODE 2: DEFAULT EXPLORE TABS (Responsive tabs with no horizontal overflow issues) */
-            <div className="flex items-center border-t border-light-300 dark:border-dark-300 px-1 overflow-x-auto no-scrollbar">
-              {['For you', 'Trending', ...categories.slice(0, 4).map((c) => c.name)].map((cat) => {
+            /* MODE 2: DEFAULT EXPLORE TABS (Cut short - top 3-4 tabs only, NO horizontal scroll or swipe) */
+            <div className="w-full flex items-center border-t border-light-300 dark:border-dark-300 overflow-hidden">
+              {['For you', 'Trending', ...categories.slice(0, 2).map((c) => c.name)].map((cat) => {
                 const isActive = activeCategoryTab === cat;
                 return (
                   <button
                     key={cat}
                     onClick={() => handleSelectCategoryTab(cat)}
-                    className="flex-1 min-w-[68px] sm:min-w-0 py-3 text-center text-xs sm:text-sm font-semibold transition-colors relative hover:bg-light-200/50 dark:hover:bg-dark-200/40"
+                    className="flex-1 min-w-0 py-3 text-center text-xs sm:text-sm font-semibold transition-colors relative hover:bg-light-200/50 dark:hover:bg-dark-200/40"
                   >
                     <span
                       className={`truncate block px-1 ${

@@ -255,151 +255,273 @@ const Authors: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-light-300 dark:border-dark-300 bg-light-200/50 dark:bg-dark-200/50 text-xs font-mono uppercase text-dark-400 dark:text-light-400">
-                  <th className="py-3.5 px-4 sm:px-6 font-semibold">User</th>
-                  <th className="py-3.5 px-4 font-semibold hidden md:table-cell">Email</th>
-                  <th className="py-3.5 px-4 font-semibold">Role</th>
-                  <th className="py-3.5 px-4 font-semibold">Status</th>
-                  <th className="py-3.5 px-4 font-semibold hidden sm:table-cell">Followers</th>
-                  <th className="py-3.5 px-4 sm:px-6 text-right font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-light-200 dark:divide-dark-300">
-                {filteredAuthors.map((author) => {
-                  const isCurrent = author._id === currentUser?._id;
-                  const profileUrl = author.username ? `/@${author.username}` : '#';
-                  const isActive = author.isActive !== false;
+          <div>
+            {/* Mobile Card List (md:hidden) */}
+            <div className="md:hidden divide-y divide-light-200 dark:divide-dark-300">
+              {filteredAuthors.map((author) => {
+                const isCurrent = author._id === currentUser?._id;
+                const profileUrl = author.username ? `/@${author.username}` : '#';
+                const isActive = author.isActive !== false;
 
-                  return (
-                    <motion.tr
-                      key={author._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className={`hover:bg-light-200/40 dark:hover:bg-dark-200/40 transition-colors ${
-                        !isActive ? 'opacity-75 bg-rose-50/20 dark:bg-rose-950/10' : ''
-                      }`}
-                    >
-                      {/* User Info */}
-                      <td className="py-3.5 px-4 sm:px-6">
-                        <div className="flex items-center gap-3">
-                          <Link to={profileUrl} className="shrink-0 relative group">
-                            <img
-                              src={
-                                author.avatar ||
-                                `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name || 'User')}`
-                              }
-                              alt={author.name}
-                              className="w-10 h-10 rounded-full object-cover border border-light-300 dark:border-dark-300 group-hover:ring-2 ring-primary-500 transition-all"
-                            />
-                          </Link>
-                          <div className="min-w-0">
-                            <Link
-                              to={profileUrl}
-                              className="font-bold text-dark-100 dark:text-light-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors truncate block"
-                            >
-                              {author.name}
-                              {isCurrent && (
-                                <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 font-semibold">
-                                  YOU
-                                </span>
-                              )}
-                            </Link>
-                            <p className="text-xs text-dark-400 dark:text-light-400 truncate">
-                              @{author.username}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Email */}
-                      <td className="py-3.5 px-4 hidden md:table-cell text-dark-400 dark:text-light-400 font-mono text-xs truncate max-w-xs">
-                        {author.email || '—'}
-                      </td>
-
-                      {/* Role Selector */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={author.role || 'user'}
-                            disabled={updatingId === author._id || isCurrent}
-                            onChange={(e) => handleRoleChange(author._id, e.target.value)}
-                            aria-label={`Change role for ${author.name}`}
-                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all ${getRoleBadge(
-                              author.role || 'user'
-                            )} disabled:opacity-75 disabled:cursor-not-allowed`}
+                return (
+                  <div
+                    key={author._id}
+                    className={`p-4 space-y-3 transition-colors ${
+                      !isActive ? 'bg-rose-50/20 dark:bg-rose-950/10' : ''
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Link to={profileUrl} className="shrink-0">
+                          <img
+                            src={
+                              author.avatar ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name || 'User')}`
+                            }
+                            alt={author.name}
+                            className="w-11 h-11 rounded-full object-cover border border-light-300 dark:border-dark-300"
+                          />
+                        </Link>
+                        <div className="min-w-0">
+                          <Link
+                            to={profileUrl}
+                            className="font-bold text-dark-100 dark:text-light-100 truncate block text-sm"
                           >
-                            <option value="user">User</option>
-                            <option value="author">Author</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                          {updatingId === author._id && (
-                            <RefreshCw size={12} className="animate-spin text-primary-500" />
+                            {author.name}
+                            {isCurrent && (
+                              <span className="ml-1.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 font-semibold">
+                                YOU
+                              </span>
+                            )}
+                          </Link>
+                          <p className="text-xs text-dark-400 dark:text-light-400 truncate">
+                            @{author.username}
+                          </p>
+                          {author.email && (
+                            <p className="text-[11px] text-dark-500 dark:text-light-500 font-mono truncate">
+                              {author.email}
+                            </p>
                           )}
                         </div>
-                      </td>
+                      </div>
 
-                      {/* Account Status Badge */}
-                      <td className="py-3.5 px-4">
+                      {/* Status Badge */}
+                      <div className="shrink-0">
                         {isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                             Deactivated
                           </span>
                         )}
-                      </td>
+                      </div>
+                    </div>
 
-                      {/* Followers */}
-                      <td className="py-3.5 px-4 hidden sm:table-cell text-xs text-dark-400 dark:text-light-400">
-                        {Array.isArray(author.followers) ? author.followers.length : 0}
-                      </td>
+                    <div className="flex items-center justify-between pt-1 border-t border-light-200 dark:border-dark-300/60 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-dark-400 dark:text-light-400 text-xs font-mono">Role:</span>
+                        <select
+                          value={author.role || 'user'}
+                          disabled={updatingId === author._id || isCurrent}
+                          onChange={(e) => handleRoleChange(author._id, e.target.value)}
+                          aria-label={`Change role for ${author.name}`}
+                          className={`text-xs font-semibold px-2 py-1 rounded-full border cursor-pointer focus:outline-none ${getRoleBadge(
+                            author.role || 'user'
+                          )} disabled:opacity-75 disabled:cursor-not-allowed`}
+                        >
+                          <option value="user">User</option>
+                          <option value="author">Author</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </div>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 sm:px-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            to={profileUrl}
-                            className="p-1.5 rounded-lg text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
-                            title="View Public Profile"
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={profileUrl}
+                          className="p-1.5 rounded-lg text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 hover:bg-light-200 dark:hover:bg-dark-200"
+                          title="View Public Profile"
+                        >
+                          <ExternalLink size={15} />
+                        </Link>
+
+                        {!isCurrent && (
+                          <button
+                            onClick={() => handleToggleDeactivation(author)}
+                            disabled={togglingStatusId === author._id}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
+                              isActive
+                                ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50'
+                                : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50'
+                            }`}
                           >
-                            <ExternalLink size={16} />
-                          </Link>
+                            {togglingStatusId === author._id ? (
+                              <RefreshCw size={12} className="animate-spin" />
+                            ) : isActive ? (
+                              <Ban size={12} />
+                            ) : (
+                              <CheckCircle2 size={12} />
+                            )}
+                            <span>{isActive ? 'Deactivate' : 'Activate'}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-                          {!isCurrent && (
-                            <button
-                              onClick={() => handleToggleDeactivation(author)}
-                              disabled={togglingStatusId === author._id}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
-                                isActive
-                                  ? 'text-amber-600 hover:text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50'
-                                  : 'text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50'
-                              }`}
-                              title={isActive ? 'Deactivate User Account' : 'Reactivate User Account'}
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-light-300 dark:border-dark-300 bg-light-200/50 dark:bg-dark-200/50 text-xs font-mono uppercase text-dark-400 dark:text-light-400">
+                    <th className="py-3.5 px-4 sm:px-6 font-semibold">User</th>
+                    <th className="py-3.5 px-4 font-semibold hidden md:table-cell">Email</th>
+                    <th className="py-3.5 px-4 font-semibold">Role</th>
+                    <th className="py-3.5 px-4 font-semibold">Status</th>
+                    <th className="py-3.5 px-4 font-semibold hidden sm:table-cell">Followers</th>
+                    <th className="py-3.5 px-4 sm:px-6 text-right font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-light-200 dark:divide-dark-300">
+                  {filteredAuthors.map((author) => {
+                    const isCurrent = author._id === currentUser?._id;
+                    const profileUrl = author.username ? `/@${author.username}` : '#';
+                    const isActive = author.isActive !== false;
+
+                    return (
+                      <motion.tr
+                        key={author._id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={`hover:bg-light-200/40 dark:hover:bg-dark-200/40 transition-colors ${
+                          !isActive ? 'opacity-75 bg-rose-50/20 dark:bg-rose-950/10' : ''
+                        }`}
+                      >
+                        {/* User Info */}
+                        <td className="py-3.5 px-4 sm:px-6">
+                          <div className="flex items-center gap-3">
+                            <Link to={profileUrl} className="shrink-0 relative group">
+                              <img
+                                src={
+                                  author.avatar ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name || 'User')}`
+                                }
+                                alt={author.name}
+                                className="w-10 h-10 rounded-full object-cover border border-light-300 dark:border-dark-300 group-hover:ring-2 ring-primary-500 transition-all"
+                              />
+                            </Link>
+                            <div className="min-w-0">
+                              <Link
+                                to={profileUrl}
+                                className="font-bold text-dark-100 dark:text-light-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors truncate block"
+                              >
+                                {author.name}
+                                {isCurrent && (
+                                  <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 font-semibold">
+                                    YOU
+                                  </span>
+                                )}
+                              </Link>
+                              <p className="text-xs text-dark-400 dark:text-light-400 truncate">
+                                @{author.username}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Email */}
+                        <td className="py-3.5 px-4 hidden md:table-cell text-dark-400 dark:text-light-400 font-mono text-xs truncate max-w-xs">
+                          {author.email || '—'}
+                        </td>
+
+                        {/* Role Selector */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={author.role || 'user'}
+                              disabled={updatingId === author._id || isCurrent}
+                              onChange={(e) => handleRoleChange(author._id, e.target.value)}
+                              aria-label={`Change role for ${author.name}`}
+                              className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all ${getRoleBadge(
+                                author.role || 'user'
+                              )} disabled:opacity-75 disabled:cursor-not-allowed`}
                             >
-                              {togglingStatusId === author._id ? (
-                                <RefreshCw size={13} className="animate-spin" />
-                              ) : isActive ? (
-                                <Ban size={13} />
-                              ) : (
-                                <CheckCircle2 size={13} />
-                              )}
-                              <span>{isActive ? 'Deactivate' : 'Activate'}</span>
-                            </button>
+                              <option value="user">User</option>
+                              <option value="author">Author</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                            {updatingId === author._id && (
+                              <RefreshCw size={12} className="animate-spin text-primary-500" />
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Account Status Badge */}
+                        <td className="py-3.5 px-4">
+                          {isActive ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                              Deactivated
+                            </span>
                           )}
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+
+                        {/* Followers */}
+                        <td className="py-3.5 px-4 hidden sm:table-cell text-xs text-dark-400 dark:text-light-400">
+                          {Array.isArray(author.followers) ? author.followers.length : 0}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 sm:px-6 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              to={profileUrl}
+                              className="p-1.5 rounded-lg text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
+                              title="View Public Profile"
+                            >
+                              <ExternalLink size={16} />
+                            </Link>
+
+                            {!isCurrent && (
+                              <button
+                                onClick={() => handleToggleDeactivation(author)}
+                                disabled={togglingStatusId === author._id}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
+                                  isActive
+                                    ? 'text-amber-600 hover:text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50'
+                                    : 'text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50'
+                                }`}
+                                title={isActive ? 'Deactivate User Account' : 'Reactivate User Account'}
+                              >
+                                {togglingStatusId === author._id ? (
+                                  <RefreshCw size={13} className="animate-spin" />
+                                ) : isActive ? (
+                                  <Ban size={13} />
+                                ) : (
+                                  <CheckCircle2 size={13} />
+                                )}
+                                <span>{isActive ? 'Deactivate' : 'Activate'}</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

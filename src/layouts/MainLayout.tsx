@@ -6,6 +6,7 @@ import { RootState } from '../redux/store';
 import { toggleSidebar as toggleSidebarAction, closeSidebar as closeSidebarAction } from '../redux/slices/uiSlice';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
+import MobileBottomNav from '../components/layout/MobileBottomNav';
 import { useAuth } from '../hooks/useAuth';
 
 const MainLayout: React.FC = () => {
@@ -53,7 +54,7 @@ const MainLayout: React.FC = () => {
   const showMobileNavbar = !isAppView;
 
   const mainTopPaddingClass = !isAppView
-    ? (showDesktopNavbar ? 'pt-20' : 'pt-20 lg:pt-0')
+    ? (showDesktopNavbar ? 'pt-16 sm:pt-20' : 'pt-16 sm:pt-20 lg:pt-0')
     : 'pt-0';
 
   return (
@@ -74,7 +75,7 @@ const MainLayout: React.FC = () => {
           />
         )}
         
-        <main className={`flex-1 flex flex-col min-w-0 ${mainTopPaddingClass}`}>
+        <main className={`flex-1 flex flex-col min-w-0 ${mainTopPaddingClass} ${!isFullPage ? 'pb-16 lg:pb-0' : ''}`}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -86,6 +87,9 @@ const MainLayout: React.FC = () => {
           </motion.div>
         </main>
       </div>
+
+      {/* Responsive Horizontal Mobile App Bottom Bar */}
+      {!isFullPage && <MobileBottomNav />}
     </div>
   );
 };

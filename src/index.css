@@ -50,11 +50,15 @@
   html {
     @apply scroll-smooth;
     scrollbar-gutter: stable;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   body {
     @apply bg-light-100 text-dark-100 dark:bg-dark-100 dark:text-light-100 transition-colors duration-300;
     font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   h1, h2, h3, h4, h5, h6 {

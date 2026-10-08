@@ -171,9 +171,17 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
     </motion.div>
   );
 
+  const [unauthMobileMenuOpen, setUnauthMobileMenuOpen] = useState(false);
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 pt-6 px-4 md:px-8 pointer-events-none transition-all duration-500">
-      <div className="mx-auto max-w-7xl flex items-center justify-between pointer-events-auto">
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'bg-light-100/95 dark:bg-dark-100/95 backdrop-blur-xl border-b border-light-300/70 dark:border-dark-300/70 shadow-sm py-2 px-3 sm:px-6 md:px-8'
+          : 'bg-light-100/90 dark:bg-dark-100/90 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none border-b border-light-300/50 dark:border-dark-300/50 md:border-b-0 py-2 sm:py-2.5 px-3 sm:px-6 md:pt-6 md:pb-0 md:px-8'
+      }`}
+    >
+      <div className="mx-auto max-w-7xl flex items-center justify-between">
         
         {/* Brand */}
         <div className="flex items-center group relative z-20">
@@ -184,7 +192,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
           )}
         </div>
 
-        {/* Central Capsule Navigation */}
+        {/* Central Capsule Navigation (Desktop) */}
         <nav className={`hidden md:flex items-center backdrop-blur-xl bg-light-100/70 dark:bg-dark-200/70 border border-light-300/50 dark:border-dark-300/50 rounded-full px-6 py-2.5 transition-all duration-500 shadow-sm ${isScrolled ? 'shadow-lg shadow-black/5 dark:shadow-black/20 translate-y-2' : ''}`}>
           <ul className="flex items-center space-x-6">
             {(isAuthenticated
@@ -224,20 +232,20 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center space-x-3 relative z-20">
+        <div className="flex items-center space-x-1.5 sm:space-x-3 relative z-20">
           {isAuthenticated && (
             <button
               onClick={() => setSearchOpen(!searchOpen)}
-              className="rounded-full p-2.5 bg-light-100/70 dark:bg-dark-200/70 backdrop-blur-xl border border-light-300/50 dark:border-dark-300/50 text-dark-300 hover:bg-light-200 dark:text-light-300 dark:hover:bg-dark-300 transition-all shadow-sm hover:scale-105 active:scale-95"
+              className="rounded-full p-2 sm:p-2.5 bg-light-100/70 dark:bg-dark-200/70 backdrop-blur-xl border border-light-300/50 dark:border-dark-300/50 text-dark-300 hover:bg-light-200 dark:text-light-300 dark:hover:bg-dark-300 transition-all shadow-sm hover:scale-105 active:scale-95"
               aria-label="Search"
             >
-              <Search size={18} />
+              <Search size={17} />
             </button>
           )}
           
           <button
             onClick={toggleTheme}
-            className="rounded-full p-2.5 bg-light-100/70 dark:bg-dark-200/70 backdrop-blur-xl border border-light-300/50 dark:border-dark-300/50 text-dark-300 hover:bg-light-200 dark:text-light-300 dark:hover:bg-dark-300 transition-all shadow-sm hover:scale-105 active:scale-95"
+            className="rounded-full p-2 sm:p-2.5 bg-light-100/70 dark:bg-dark-200/70 backdrop-blur-xl border border-light-300/50 dark:border-dark-300/50 text-dark-300 hover:bg-light-200 dark:text-light-300 dark:hover:bg-dark-300 transition-all shadow-sm hover:scale-105 active:scale-95"
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             <motion.div
@@ -245,39 +253,46 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
               animate={{ rotate: theme === 'dark' ? 180 : 0 }}
               transition={{ duration: 0.3 }}
             >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </motion.div>
           </button>
           
           {!isAuthenticated ? (
-            <div className="hidden sm:flex items-center space-x-2 pl-2">
+            <div className="flex items-center space-x-1 sm:space-x-2 pl-1">
               <Link
                 to="/auth/login"
-                className="text-sm font-medium text-dark-300 hover:text-primary-600 dark:text-light-300 dark:hover:text-primary-400 transition-colors px-4 py-2"
+                className="text-xs sm:text-sm font-semibold text-dark-300 hover:text-primary-600 dark:text-light-300 dark:hover:text-primary-400 transition-colors px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-light-200 dark:hover:bg-dark-300"
               >
                 Sign in
               </Link>
               <Link
                 to="/auth/signup"
-                className="rounded-full bg-dark-100 dark:bg-light-100 px-6 py-2.5 text-sm font-medium text-light-100 dark:text-dark-100 hover:scale-105 transition-transform shadow-sm"
+                className="rounded-full bg-dark-100 dark:bg-light-100 px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-light-100 dark:text-dark-100 hover:scale-105 transition-transform shadow-sm"
               >
                 Get started
               </Link>
+              <button
+                onClick={() => setUnauthMobileMenuOpen(!unauthMobileMenuOpen)}
+                className="p-1.5 rounded-full hover:bg-light-200 dark:hover:bg-dark-300 text-dark-400 dark:text-light-300 md:hidden ml-0.5"
+                aria-label="Toggle navigation menu"
+              >
+                {unauthMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
             </div>
           ) : (
             <div 
-              className="relative pl-2"
+              className="relative pl-1 sm:pl-2"
               onMouseEnter={() => setIsProfileOpen(true)}
               onMouseLeave={() => setIsProfileOpen(false)}
             >
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center space-x-3 rounded-full p-1 pr-4 bg-light-100/70 dark:bg-dark-200/70 backdrop-blur-xl border border-light-300/50 dark:border-dark-300/50 hover:bg-light-200 dark:hover:bg-dark-300 transition-all shadow-sm"
+                className="flex items-center space-x-2 rounded-full p-1 pr-1 sm:pr-3 bg-light-100/70 dark:bg-dark-200/70 backdrop-blur-xl border border-light-300/50 dark:border-dark-300/50 hover:bg-light-200 dark:hover:bg-dark-300 transition-all shadow-sm"
               >
                 <img 
                   src={user?.avatar || 'https://pbs.twimg.com/profile_images/1835759638433652736/fD3zE0qE_400x400.jpg'} 
                   alt="Profile" 
-                  className="h-8 w-8 rounded-full object-cover border border-light-300 dark:border-dark-300"
+                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover border border-light-300 dark:border-dark-300"
                 />
                 <span className="hidden md:inline text-sm text-dark-300 dark:text-light-300 font-medium">
                   {user?.username}
@@ -293,14 +308,47 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
           {isAuthenticated && (
             <button
               onClick={toggleSidebar}
-              className="rounded-full p-2.5 bg-light-100/70 dark:bg-dark-200/70 backdrop-blur-xl border border-light-300/50 dark:border-dark-300/50 text-dark-300 hover:bg-light-200 dark:text-light-300 dark:hover:bg-dark-300 transition-all shadow-sm lg:hidden ml-2"
+              className="rounded-full p-2 sm:p-2.5 bg-light-100/70 dark:bg-dark-200/70 backdrop-blur-xl border border-light-300/50 dark:border-dark-300/50 text-dark-300 hover:bg-light-200 dark:text-light-300 dark:hover:bg-dark-300 transition-all shadow-sm lg:hidden ml-1"
               aria-label="Toggle sidebar"
             >
-              <Menu size={18} />
+              <Menu size={17} />
             </button>
           )}
         </div>
       </div>
+
+      {/* Unauthenticated Mobile Dropdown Menu */}
+      <AnimatePresence>
+        {!isAuthenticated && unauthMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t border-light-300/60 dark:border-dark-300/60 mt-2 pt-2 pb-3 px-2 space-y-1 bg-light-100 dark:bg-dark-100"
+          >
+            {[
+              { name: 'Feed', path: '/feed' },
+              { name: 'Explore', path: '/explore' },
+              { name: 'Our Story', path: '/about' },
+              { name: 'Membership', path: '/membership' },
+              { name: 'Write', path: '/write' },
+            ].map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setUnauthMobileMenuOpen(false)}
+                className={`block px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                  location.pathname === link.path
+                    ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400'
+                    : 'text-dark-200 dark:text-light-200 hover:bg-light-200 dark:hover:bg-dark-200'
+                }`}
+              >
+                {link.name}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Search overlay */}
       <AnimatePresence>
