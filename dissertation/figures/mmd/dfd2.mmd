@@ -1,0 +1,16 @@
+flowchart LR
+    AU((Author)) -->|compose| P2[P2 Composition]
+    P2 --> D2[(D2 submissions)]
+    P2 --> CL((Cloudinary))
+    D2 --> P3[P3 Governance]
+    MS[/Machine scan/] --> P3
+    RV((Reviewer)) --> P3
+    P3 --> D4[(D4 reviewnotes)]
+    P3 --> D2
+    D2 --> P4[P4 Distribution]
+    D3[(D3 interactions)] --> P4
+    D1[(D1 users)] --> P4
+    P4 -->|feeds, explore| RD((Readers))
+    RD -->|engage| P5[P5 Engagement]
+    P5 --> D3
+    P5 --> D5[(D5 comments)]

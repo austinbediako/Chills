@@ -1,0 +1,15 @@
+stateDiagram-v2
+  [*] --> Unauthenticated: visitor
+  Unauthenticated --> AuthenticatedNoUsername: sign up / log in
+  AuthenticatedNoUsername: State B — username = "pending-*"
+  AuthenticatedNoUsername --> FullAccess: choose @username (/onboarding/username)
+  note right of AuthenticatedNoUsername
+    ProtectedRoute forces redirect to
+    /onboarding/username; intended
+    destination stored and restored
+  end note
+  FullAccess: State C — valid username
+  FullAccess --> OnboardingInterests: optional /onboarding/interests
+  OnboardingInterests --> FullAccess: skip or save
+  Unauthenticated --> Unauthenticated: protected route → redirect /auth/login
+  FullAccess --> Unauthenticated: sign out

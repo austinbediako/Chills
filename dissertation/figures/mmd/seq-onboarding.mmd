@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant U as User
+    participant C as Client SPA
+    participant R as ProtectedRoute
+    participant A as API
+    participant D as MongoDB
+    U->>C: register/login
+    C->>A: POST /api/auth/register|login
+    A->>D: create/find user (username=pending-*)
+    A-->>C: {user, token}
+    C->>R: navigate to /feed
+    R->>R: check localStorage user
+    R-->>C: username pending → redirect /onboarding/username (save 'from')
+    U->>C: enter username
+    C->>A: GET /api/auth/check-username
+    A->>D: uniqueness + reserved check
+    A-->>C: available
+    C->>A: PUT /api/auth/profile {username}
+    A->>D: commit username
+    C->>R: retry original destination
+    R-->>C: State C → render /feed

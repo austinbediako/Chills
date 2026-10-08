@@ -1,0 +1,25 @@
+flowchart TB
+  U["User (browser)"] -->|"credentials, actions"| P1["1.0<br/>Authentication &<br/>Session Mgmt"]
+  P1 <-->|"user records"| D1[("users")]
+  P1 -->|"JWT + user object"| U
+
+  U -->|"story CRUD, submit"| P2["2.0<br/>Submission<br/>Management"]
+  P2 <-->|"stories"| D2[("submissions")]
+  P2 -->|"media files"| CL["Cloudinary / uploads"]
+
+  P2 -->|"new/edited story text"| P3["3.0<br/>Machine Moderation<br/>(scoring engine)"]
+  P3 -->|"score, grade, labels"| D2
+
+  RV["Reviewer"] -->|"approve / request revisions"| P4["4.0<br/>Editorial Review"]
+  P4 <--> D2
+  P4 -->|"notes"| D4[("reviewnotes")]
+
+  U -->|"likes, comments, follows"| P5["5.0<br/>Social Interactions"]
+  P5 <--> D5[("comments<br/>interactions")]
+  P5 <--> D1
+
+  U -->|"feed/explore requests"| P6["6.0<br/>Recommendation &<br/>Discovery"]
+  P6 <--> D1
+  P6 <--> D2
+  P6 <--> D5
+  P6 -->|"ranked feed"| U

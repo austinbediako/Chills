@@ -1,0 +1,8 @@
+flowchart LR
+  B["Browser"] -->|"navigate /"| SW{"Service Worker<br/>(public/sw.js)"}
+  SW -->|"cache hit"| CACHE["App shell cache<br/>index.html, assets, icons"]
+  SW -->|"cache miss"| NET["Network<br/>Vercel CDN"]
+  NET --> SW
+  CACHE --> APP["KBlog SPA renders"]
+  NET --> APP
+  MANIFEST["manifest.json<br/>name, icons, standalone display"] -->|"install prompt"| OS["Device home screen"]

@@ -1,0 +1,6 @@
+flowchart LR
+    A[GET /popular/tags] --> B[unwind tags on PUBLISHED non-draft]
+    B --> C[group by tag, count]
+    C --> D[sort desc, limit]
+    D --> E[trending tags response]
+    E --> F[Explore tag cloud]

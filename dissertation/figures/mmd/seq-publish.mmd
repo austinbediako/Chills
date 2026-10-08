@@ -1,0 +1,24 @@
+sequenceDiagram
+  actor W as Writer
+  participant FE as React (/write editor)
+  participant API as Express API
+  participant MOD as ModerationService
+  participant DB as MongoDB
+  actor R as Reviewer/Admin
+
+  W->>FE: compose story (Quill rich text, cover image, tags)
+  FE->>API: POST /api/submissions/upload (multer → Cloudinary)
+  API-->>FE: image URL
+  FE->>API: POST /api/submissions (title, abstract, content, category, tags)
+  API->>MOD: analyzeSubmission(title, abstract, content, tags)
+  MOD-->>API: { overallScore, grade, labels }
+  API->>DB: save Submission (status=PENDING_REVIEW, moderation embedded)
+  API-->>FE: 201 created → appears in "In Review" tab
+
+  R->>API: GET /api/submissions?status=PENDING_REVIEW
+  API-->>R: review queue (+ moderation grade per item)
+  R->>API: PUT /api/submissions/:id/status { APPROVED, note }
+  API->>DB: update status, save ReviewNote
+  API-->>R: 200
+  Note over DB: story now visible in feeds/explore
+  W->>API: GET /me/stories — status PUBLISHED

@@ -1,0 +1,29 @@
+flowchart TB
+  ROOT["/"] -->|unauthenticated| PUB["Public landing"]
+  ROOT -->|authenticated| HOME["Personalized home"]
+  subgraph Public["Public IA"]
+    PUB2["/about"] 
+    PUB3["/membership"]
+    PUB4["/contact"]
+    PUB5["/auth/login"]
+    PUB6["/auth/signup"]
+  end
+  subgraph App["Authenticated IA (ProtectedRoute)"]
+    FEED["/feed"]
+    EXP["/explore"]
+    BM["/bookmarks"]
+    MS["/me/stories"]
+    WR["/write, /write/:id"]
+    PROF["/profile"]
+    AP["/@:username"]
+    REV["/reviews (reviewer/admin)"]
+    ADM["/authors (adminOnly)"]
+  end
+  subgraph Onboard["Onboarding"]
+    OB1["/onboarding/username (mandatory)"]
+    OB2["/onboarding/interests (optional)"]
+  end
+  LEG["Legacy redirects:<br/>/blog/:slug, /categories/*→/explore?category,<br/>/tags/*→/explore?tag, /settings→/profile,<br/>/admin/users→/authors"]
+  ROOT --> Public
+  ROOT --> App
+  PUB6 --> OB1 --> OB2 --> App

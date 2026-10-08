@@ -1,0 +1,26 @@
+flowchart LR
+  subgraph User["User Device"]
+    BR["Web Browser<br/>React SPA + Service Worker (PWA)"]
+  end
+
+  subgraph Vercel["Vercel (Static Hosting / CDN)"]
+    FE["Frontend build (dist/)<br/>SPA rewrites → index.html"]
+  end
+
+  subgraph Render["Render (Oregon, Node runtime)"]
+    BE["Express API server<br/>server/index.js :5005<br/>auto-deploy from GitHub"]
+  end
+
+  subgraph Atlas["MongoDB Atlas (Cloud)"]
+    DB[("kblog database<br/>6 collections")]
+  end
+
+  subgraph CL["Cloudinary"]
+    CDN["Image storage & delivery"]
+  end
+
+  BR -->|"HTTPS GET /"| FE
+  BR -->|"HTTPS /api/*"| BE
+  BE -->|"mongodb+srv"| DB
+  BE -->|"uploads"| CDN
+  BR -.->|"images"| CDN

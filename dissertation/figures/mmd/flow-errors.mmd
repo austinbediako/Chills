@@ -1,0 +1,11 @@
+flowchart TD
+    A[controller throws / validation fails] --> B[errorMiddleware]
+    B --> C{error type}
+    C -->|Mongoose ValidationError| D[400 field messages]
+    C -->|CastError| E[400 malformed id]
+    C -->|JsonWebToken / expired| F[401]
+    C -->|express-validator| G[400 array of field errors]
+    C -->|generic| H[500 message]
+    D & E & F & G & H --> I[response: json message]
+    I --> J[client axios interceptor]
+    J --> K[ui slice toast / inline form error]

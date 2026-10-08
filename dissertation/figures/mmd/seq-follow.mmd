@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant V as Viewer
+    participant FE as AuthorCard
+    participant API as API
+    participant D as MongoDB
+    participant P as Pipeline
+    V->>FE: follow author
+    FE->>API: POST /api/users/:id/follow
+    API->>D: add edge on both docs
+    API-->>FE: following=true, new count
+    Note over V,P: next for-you request
+    V->>P: GET /feed tab=for-you
+    P->>D: hydrate context - following now includes author
+    P->>D: in-network source queries author recent posts
+    P-->>V: author content eligible and ranked

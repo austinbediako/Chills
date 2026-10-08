@@ -1,0 +1,25 @@
+flowchart TB
+  subgraph Views["Pages (lazy-loaded, React Router v6)"]
+    PUB["Public: HomePage, About,<br/>Membership, Contact, Auth"]
+    APPP["App: AuthenticatedHome, SocialFeed,<br/>Explore, Bookmarks, MyStories,<br/>WritePage, Profile, AuthorProfile,<br/>Reviews, Authors"]
+  end
+
+  subgraph Components["Shared Components"]
+    LAY["MainLayout / Navbar /<br/>Sidebar / MobileBottomNav"]
+    GUARD["ProtectedRoute / PublicRoute /<br/>AdminRoute"]
+    FORMS["LoginForm, RegisterForm,<br/>PostForm, CommentForm"]
+    COMMON["BookmarkDropdown, FollowersModal,<br/>KeyboardShortcutsModal, ImageCropModal,<br/>Notification, ErrorBoundary"]
+  end
+
+  subgraph State["State & Services"]
+    STORE["Redux store:<br/>auth, submissions, comments, ui slices"]
+    HOOKS["hooks: useAuth, useComments,<br/>useSubmissions, useCategories, useAuthors"]
+    AX["axios (baseURL → API)"]
+    THEME["ThemeContext (dark mode)"]
+  end
+
+  PUB & APPP --> LAY & GUARD & FORMS & COMMON
+  PUB & APPP --> STORE & HOOKS
+  STORE --> AX
+  HOOKS --> AX
+  AX --> EXT["Express REST API :5005"]

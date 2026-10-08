@@ -1,0 +1,18 @@
+flowchart TB
+    subgraph recommendation service
+        IDX[index.js - getForYouFeed]
+        PIPE[pipeline.js - orchestrator]
+        CTX[queryHydration.js]
+        S1[sources/inNetworkSource]
+        S2[sources/outOfNetworkSource]
+        F[filters x6]
+        H[hydrators x2]
+        SC[scorers x3]
+        SEL[selectors/topKSelector]
+        PRM[params.js]
+        IDX --> PIPE
+        PIPE --> CTX --> S1 & S2 --> F --> H --> SC --> SEL
+        PRM -.-> PIPE
+    end
+    DB[(MongoDB)]
+    CTX & S1 & S2 & H & SEL --> DB

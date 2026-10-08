@@ -1,0 +1,12 @@
+flowchart TD
+    A[Story lands in PENDING_REVIEW] --> B[Reviewer opens queue]
+    B --> C[Item renders with machine grade, category scores, matched terms]
+    C --> D{Human decision}
+    D -->|Approve| E[status → PUBLISHED + ReviewNote]
+    D -->|Request revisions| F[status → REVISIONS_REQUESTED + ReviewNote mandatory]
+    D -->|Defer| G[stays pending in queue]
+    F --> H[Author sees note in My Stories]
+    H --> I[Author edits draft, resubmits]
+    I --> J[Machine rescan runs again]
+    J --> B
+    E --> K[Eligible for all readers' feeds]

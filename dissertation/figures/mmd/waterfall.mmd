@@ -1,0 +1,8 @@
+flowchart TB
+  R["1. Requirements<br/>functional & non-functional<br/>specification"] --> A["2. Analysis<br/>use cases, data model,<br/>feasibility"]
+  A --> D["3. Design<br/>architecture, UML,<br/>database schema, UI design"]
+  D --> I["4. Implementation<br/>React frontend, Express API,<br/>recommendation & moderation services"]
+  I --> T["5. Testing<br/>unit/manual test cases,<br/>moderation & feed verification"]
+  T --> M["6. Deployment &<br/>Maintenance (Vercel + Render)"]
+  T -.->|"defects fed back<br/>(documented iterations)"| I
+  D -.->|"design refinements"| A

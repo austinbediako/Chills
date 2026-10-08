@@ -1,0 +1,9 @@
+flowchart LR
+  UI["Editor: file picker /<br/>ImageCropModal"] -->|"multipart/form-data"| UP["POST /api/submissions/upload<br/>(protect)"]
+  UP --> MU{"multer storage"}
+  MU -->|"Cloudinary configured"| CL["Cloudinary upload<br/>→ returns https URL"]
+  MU -->|"fallback"| LD["local disk<br/>server/uploads/*"]
+  CL --> RESP["200 { imageUrl }"]
+  LD --> RESP
+  RESP --> ED["image URL embedded in<br/>submission.image / avatar"]
+  ED --> DB[("MongoDB<br/>URL persisted")]

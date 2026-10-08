@@ -1,0 +1,25 @@
+flowchart LR
+  subgraph KBlog["KBlog System"]
+    UC1["Browse public landing / about / membership"]
+    UC2["Register / log in"]
+    UC3["Complete username onboarding"]
+    UC4["Read personalized For You feed"]
+    UC5["Explore stories (search, categories, tags)"]
+    UC6["Write & edit stories (rich-text editor)"]
+    UC7["Submit story for review"]
+    UC8["Manage drafts (My Stories)"]
+    UC9["Comment / like / repost / bookmark"]
+    UC10["Follow authors"]
+    UC11["Manage profile, avatar, cover"]
+    UC12["Review pending submissions"]
+    UC13["Write review notes / request revisions"]
+    UC14["Run machine moderation audit"]
+    UC15["Manage authors (activate/deactivate)"]
+    UC16["Manage categories"]
+  end
+
+  V["Visitor"] --> UC1 & UC2
+  S["Student (authenticated)"] --> UC3 & UC4 & UC5 & UC6 & UC7 & UC8 & UC9 & UC10 & UC11
+  R["Reviewer"] --> UC12 & UC13 & UC14
+  A["Admin"] --> UC12 & UC13 & UC14 & UC15 & UC16
+  S -.->|inherits| V

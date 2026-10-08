@@ -1,0 +1,33 @@
+flowchart TB
+  subgraph Features["Candidate features (per item)"]
+    F1["isFollowingAuthor"]
+    F2["tagOverlap (candidate tags ∩ preferred tags)"]
+    F3["categoryMatch"]
+    F4["recency = e^(−hours/72)"]
+    F5["popularity (likes·1 + comments·2 + reposts·3)/50"]
+    F6["authorPopularity (followers/1000)"]
+    F7["hasImage"]
+    F8["comment/repost density"]
+  end
+
+  subgraph Logits["Action logits (weighted sums)"]
+    L1["favorite_logit"]
+    L2["reply_logit"]
+    L3["repost_logit"]
+    L4["click_logit"]
+    L5["profile_click_logit"]
+    L6["follow_author_logit"]
+  end
+
+  subgraph Scores["sigmoid → action probabilities"]
+    S1["favorite_score"]
+    S2["reply_score"]
+    S3["repost_score → share/quote/derived scores"]
+    S4["click_score"]
+    S5["profile_click_score"]
+    S6["follow_author_score"]
+    SN["negative scores (0 — not tracked)"]
+  end
+
+  W["weightedScore:<br/>final = Σ scoreᵢ × ACTION_WEIGHTSᵢ"] --> OUT["ranked candidates"]
+  Features --> Logits --> Scores --> W

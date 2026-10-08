@@ -1,0 +1,10 @@
+flowchart TD
+    A[GET /search/explore] --> B{q present?}
+    B -->|yes| C[$text index over title, abstract, content, tags]
+    B -->|no| D[match stage]
+    C --> D
+    D --> E[apply category / tag facets]
+    E --> F[filter: status=PUBLISHED and isDraft=false]
+    F --> G[sort + paginate]
+    G --> H[optionalAuth: viewer flags]
+    H --> I[paginated response]

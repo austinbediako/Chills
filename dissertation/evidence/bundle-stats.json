@@ -1,0 +1,161 @@
+{
+  "totalKB": 1124,
+  "fileCount": 31,
+  "files": [
+    {
+      "file": "vendor-editor-BygxZZY3.js",
+      "bytes": 264586,
+      "kb": 258.4
+    },
+    {
+      "file": "vendor-react-fizqRcv0.js",
+      "bytes": 166576,
+      "kb": 162.7
+    },
+    {
+      "file": "vendor-motion-Don9tt9n.js",
+      "bytes": 114222,
+      "kb": 111.5
+    },
+    {
+      "file": "index-D_2n9dh_.css",
+      "bytes": 101963,
+      "kb": 99.6
+    },
+    {
+      "file": "index-Bfnm5lHU.js",
+      "bytes": 101745,
+      "kb": 99.4
+    },
+    {
+      "file": "AuthorProfilePage-YM-KLXkE.js",
+      "bytes": 52619,
+      "kb": 51.4
+    },
+    {
+      "file": "SocialFeedPage-DzhdvO5i.js",
+      "bytes": 32418,
+      "kb": 31.7
+    },
+    {
+      "file": "BlogListPage-DI8b-JSF.js",
+      "bytes": 30236,
+      "kb": 29.5
+    },
+    {
+      "file": "vendor-icons-CfHx3rTC.js",
+      "bytes": 30184,
+      "kb": 29.5
+    },
+    {
+      "file": "WritePage-DUsM5Q6g.js",
+      "bytes": 25953,
+      "kb": 25.3
+    },
+    {
+      "file": "HomePage-CRdKLDPj.js",
+      "bytes": 25499,
+      "kb": 24.9
+    },
+    {
+      "file": "vendor-redux-DrQrsQoF.js",
+      "bytes": 24530,
+      "kb": 24
+    },
+    {
+      "file": "vendor-editor-DZrYvFpI.css",
+      "bytes": 22046,
+      "kb": 21.5
+    },
+    {
+      "file": "Authors-BxkdkjF1.js",
+      "bytes": 18647,
+      "kb": 18.2
+    },
+    {
+      "file": "ReviewsPage-DMjmnVJy.js",
+      "bytes": 17670,
+      "kb": 17.3
+    },
+    {
+      "file": "BlogDetailPage-oDHXufwf.js",
+      "bytes": 17590,
+      "kb": 17.2
+    },
+    {
+      "file": "EditPostPage-B7sb2TmV.js",
+      "bytes": 14980,
+      "kb": 14.6
+    },
+    {
+      "file": "ProfilePage-DzXSaPbf.js",
+      "bytes": 14522,
+      "kb": 14.2
+    },
+    {
+      "file": "BookmarksPage-AlXLI7xW.js",
+      "bytes": 11063,
+      "kb": 10.8
+    },
+    {
+      "file": "OnboardingPage-60uU3XTo.js",
+      "bytes": 7930,
+      "kb": 7.7
+    },
+    {
+      "file": "RegisterPage-C6NFIO0p.js",
+      "bytes": 7185,
+      "kb": 7
+    },
+    {
+      "file": "UsernameSetupPage-c-ApcBsf.js",
+      "bytes": 7069,
+      "kb": 6.9
+    },
+    {
+      "file": "MyStoriesPage-kPCnjVyj.js",
+      "bytes": 6736,
+      "kb": 6.6
+    },
+    {
+      "file": "BookmarkDropdown-BkZ4qjh5.js",
+      "bytes": 6486,
+      "kb": 6.3
+    },
+    {
+      "file": "LoginPage-CeCujj1P.js",
+      "bytes": 6430,
+      "kb": 6.3
+    },
+    {
+      "file": "MembershipPage-B0wA8L4N.js",
+      "bytes": 5914,
+      "kb": 5.8
+    },
+    {
+      "file": "Contact-BFl7K6Ym.js",
+      "bytes": 5482,
+      "kb": 5.4
+    },
+    {
+      "file": "About-CYoM9eSN.js",
+      "bytes": 4583,
+      "kb": 4.5
+    },
+    {
+      "file": "NotFoundPage-CYQNByKn.js",
+      "bytes": 2286,
+      "kb": 2.2
+    },
+    {
+      "file": "article-CTsO5Iox.css",
+      "bytes": 2153,
+      "kb": 2.1
+    },
+    {
+      "file": "useSubmissions-DTFnfLGS.js",
+      "bytes": 1721,
+      "kb": 1.7
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant V as Viewer
+    participant FE as DetailPage
+    participant API as API
+    participant D as MongoDB
+    V->>FE: write comment
+    FE->>API: POST /api/submissions/:id/comments
+    API->>D: insert comment doc (submission, author, content)
+    API-->>FE: comment populated
+    V->>FE: reply to comment
+    FE->>API: POST /api/comments/:id/replies
+    API->>D: push embedded reply (author, content, likes, likedBy)
+    API-->>FE: updated thread
+    V->>FE: like reply
+    FE->>API: POST /api/comments/:id/replies/:rid/like
+    API->>D: toggle uid in likedBy and update likes count
+    API-->>FE: liked, likes

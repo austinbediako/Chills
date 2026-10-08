@@ -1,0 +1,7 @@
+flowchart LR
+    A[repost action] --> B[unique interaction type=REPOST]
+    B --> C[repost doc carries original submission ref]
+    C --> D[following feed merge: posts + reposts chrono]
+    C --> E[in-network source: reposts by follows within 14d]
+    D --> F[followers see repost in both feeds]
+    E --> F

@@ -1,0 +1,6 @@
+flowchart LR
+  V["Visitor"] <-->|"pages, auth credentials / session"| SYS(("0<br/>KBlog Publishing<br/>Platform"))
+  W["Writer"] <-->|"stories, drafts / status, review notes"| SYS
+  RD["Reader"] <-->|"reads, likes, comments,<br/>bookmarks, follows / feeds"| SYS
+  RV["Reviewer/Admin"] <-->|"decisions, notes / queue, audits"| SYS
+  SYS <-->|"image files / CDN URLs"| CL["Cloudinary"]

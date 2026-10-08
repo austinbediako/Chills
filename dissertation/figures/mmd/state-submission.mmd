@@ -1,0 +1,16 @@
+stateDiagram-v2
+  [*] --> DRAFT: Author creates story (/write)
+  DRAFT --> PENDING_REVIEW: Submit for review
+  PENDING_REVIEW --> APPROVED: Reviewer approves
+  PENDING_REVIEW --> REVISIONS_REQUESTED: Reviewer requests changes (ReviewNote)
+  REVISIONS_REQUESTED --> DRAFT: Author edits
+  REVISIONS_REQUESTED --> PENDING_REVIEW: Author resubmits
+  APPROVED --> PUBLISHED: Story goes live
+  PUBLISHED --> ARCHIVED: Author/admin archives
+  PUBLISHED --> DRAFT: Edit creates linked working draft (draftOf/draftRef)
+  DRAFT --> [*]: Deleted by author/admin
+  note right of PENDING_REVIEW
+    Machine moderation scan runs
+    on every submission (grade:
+    CLEAN / MILD / FLAGGED / CRITICAL)
+  end note

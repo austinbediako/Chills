@@ -1,0 +1,29 @@
+flowchart TB
+  subgraph Client["Client Tier (Browser / PWA)"]
+    SPA["React 18 SPA<br/>TypeScript + Vite"]
+    REDUX["Redux Toolkit Store<br/>auth / submissions / comments / ui"]
+    SW["Service Worker<br/>(sw.js) + manifest.json"]
+    SPA --> REDUX
+    SPA -. caches .- SW
+  end
+
+  subgraph Server["Application Tier (Node.js / Express)"]
+    MW["Middleware: CORS, JSON parser,<br/>JWT auth, express-validator, multer"]
+    ROUTES["REST Routers<br/>/api/auth /api/submissions /api/users<br/>/api/categories /api/comments"]
+    REC["Recommendation Service<br/>sources → filters → scorers → top-K"]
+    MOD["Moderation Service<br/>lexical safety scoring engine"]
+    MW --> ROUTES
+    ROUTES --> REC
+    ROUTES --> MOD
+  end
+
+  subgraph Data["Data & Media Tier"]
+    MONGO[("MongoDB Atlas<br/>users, submissions, comments,<br/>interactions, categories, reviewnotes")]
+    CLOUD["Cloudinary<br/>image CDN"]
+    DISK["Local uploads/ fallback"]
+  end
+
+  SPA -->|"HTTPS / JSON (axios)"| MW
+  ROUTES -->|"Mongoose ODM"| MONGO
+  ROUTES -->|"multer-storage-cloudinary"| CLOUD
+  ROUTES --> DISK

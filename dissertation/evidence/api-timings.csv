@@ -1,0 +1,9 @@
+endpoint,auth,status,min_ms,avg_ms,max_ms
+/api/submissions,false,200,7,10,18
+/api/submissions/feed?tab=for-you&page=1&limit=20,true,200,10,15,19
+/api/submissions/feed?tab=following&page=1&limit=20,true,200,7,7,8
+/api/submissions/search/explore,false,200,0,0,1
+/api/submissions/popular/tags,false,200,2,2,3
+/api/categories,false,200,1,2,3
+/api/users/authors,false,200,1,2,2
+/api/submissions/moderation/audit,true,200,7,9,11

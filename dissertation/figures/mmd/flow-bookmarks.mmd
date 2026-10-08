@@ -1,0 +1,12 @@
+flowchart TD
+    A[bookmark action] --> B{folder chosen?}
+    B -->|no| C[default folder]
+    B -->|yes| D[named folder]
+    C --> E[upsert interaction type=BOOKMARK folder=default]
+    D --> E2[upsert interaction folder=name]
+    F[create folder] --> G[add to user folder list]
+    H[delete folder] --> I[orphaned bookmarks migrate to default]
+    I --> J[folder removed]
+    E & E2 --> K[bookmarks view grouped by folder]
+    G --> K
+    J --> K

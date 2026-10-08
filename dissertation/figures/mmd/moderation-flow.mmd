@@ -1,0 +1,16 @@
+flowchart TB
+  A["Submission text<br/>(title + abstract + content + tags)"] --> B["extractNormalizedText<br/>strip HTML, decode entities,<br/>leetspeak deobfuscation"]
+  B --> C{"For each category:<br/>sexist, sexual, explicit,<br/>18+, racist"}
+  C --> D["match severe patterns (regex)"]
+  C --> E["match moderate patterns (regex)"]
+  D --> F["category score 0–100<br/>+ matched terms + flagged"]
+  E --> F
+  F --> G["overallScore =<br/>max·0.85 + mean(others)·0.15"]
+  G --> H{"Grade"}
+  H -->|"score ≥ 70"| I["CRITICAL"]
+  H -->|"score ≥ 40 or any label"| J["FLAGGED"]
+  H -->|"score ≥ 20"| K["MILD"]
+  H -->|"else"| L["CLEAN"]
+  I & J & K & L --> M["Persist embedded moderation<br/>subdocument on Submission"]
+  M --> N["executeMachineCallback<br/>diagnostic console log"]
+  N --> O["Visibility rules in feed:<br/>CRITICAL/flagged filtered by<br/>moderationVisibilityFilter"]

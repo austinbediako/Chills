@@ -1,0 +1,18 @@
+flowchart TB
+  subgraph Client["Client-Side Guards (React Router)"]
+    REQ["Route request"] --> PR{"ProtectedRoute"}
+    PR -->|"no localStorage user"| R1["redirect /auth/login<br/>(state.from = destination)"]
+    PR -->|"username = pending-*"| R2["redirect /onboarding/username"]
+    PR -->|"adminOnly && role ≠ admin"| R3["redirect /"]
+    PR -->|"authorized"| PAGE["page renders"]
+  end
+
+  subgraph Server["Server-Side Guards (Express)"]
+    API["API request + Bearer JWT"] --> AM{"authMiddleware.protect"}
+    AM -->|"invalid/expired token"| E401["401 Unauthorized"]
+    AM -->|"valid"| ROLE{"role check<br/>isReviewer / isAuthorOrAdmin"}
+    ROLE -->|"wrong role"| E403["403 Forbidden"]
+    ROLE -->|"permitted"| H["controller handler"]
+  end
+
+  PAGE -->|"axios + Bearer"| API

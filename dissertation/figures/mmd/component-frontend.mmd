@@ -1,0 +1,15 @@
+flowchart TB
+    subgraph SPA
+        R[React Router - route table and guards]
+        P[Pages - lazy route chunks]
+        C[Components - shared UI]
+        S[Redux store - auth submissions comments ui]
+        SV[Services - axios layer]
+        TH[ThemeContext + hooks]
+    end
+    R --> P --> C
+    P --> S
+    C --> S
+    S --> SV
+    SV -->|JSON /api| API[Express API]
+    TH --> P

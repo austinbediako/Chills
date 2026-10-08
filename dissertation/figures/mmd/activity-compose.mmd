@@ -1,0 +1,11 @@
+flowchart TD
+    A[Open /write] --> B[compose title, abstract, body, category, tags]
+    B --> C{cover image?}
+    C -->|yes| D[upload via multer to Cloudinary or local]
+    C -->|no| E
+    D --> E{submit choice}
+    E -->|Save draft| F[POST isDraft=true - private]
+    E -->|Publish| G[POST create - moderation scan synchronous]
+    G --> H[status PENDING_REVIEW - visible to reviewers]
+    F --> I[listed under Drafts in My Stories]
+    H --> J[listed under In Review]

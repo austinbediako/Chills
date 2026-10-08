@@ -1,0 +1,8 @@
+flowchart TD
+    A[new viewer - empty context] --> B[in-network source: no follows → empty]
+    B --> C[out-of-network: no preferences → weak interest pool]
+    C --> D[broad-recent pool dominates]
+    D --> E[engagement features ~0 → popularity normalisation scores]
+    E --> F[feed returns recent + popular content]
+    F --> G[viewer interacts → history accumulates]
+    G --> H[subsequent requests: interest + in-network candidates grow]

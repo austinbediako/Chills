@@ -1,0 +1,23 @@
+sequenceDiagram
+  actor U as Reader
+  participant FE as React (SocialFeedPage)
+  participant API as GET /api/submissions/feed?tab=for-you
+  participant P as Recommendation Pipeline
+  participant DB as MongoDB
+
+  U->>FE: open /feed (For You)
+  FE->>API: GET /feed?tab=for-you&page=1&limit=20 (Bearer JWT)
+  API->>P: runRecommendationPipeline(user, page, limit, seenIds)
+  P->>DB: hydrateUserContext (follows, preferred tags/categories, history)
+  par candidate sourcing
+    P->>DB: in-network: followed authors, ≤14 days
+    P->>DB: out-of-network: all published, ≤21 days
+  end
+  P->>P: filters: hydrate → dedupe → age → self-post → previously-served → moderation
+  P->>DB: hydrateEngagement (likes/comments/reposts counts)
+  P->>P: phoenixScore → weightedScore → authorDiversityScore
+  P->>P: selectTopK(page, limit)
+  P->>DB: hydratePreviewComments + final moderation check
+  P-->>API: ranked items + pagination
+  API-->>FE: 200 feed JSON
+  FE-->>U: rendered personalized feed

@@ -1,0 +1,258 @@
+[
+  {
+    "case": "TC-M01 clean technology article",
+    "input": "An in-depth analysis of typography as the interface: editorial design fundamentals and layout systems for the modern web.",
+    "result": {
+      "overallScore": 0,
+      "grade": "CLEAN",
+      "flagged": false,
+      "labels": [],
+      "summary": "Clean and safe content",
+      "categories": {
+        "sexist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "sexual": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "explicit": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "eighteenPlus": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "racist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        }
+      },
+      "analyzedAt": "2026-10-08T04:10:48.861Z"
+    }
+  },
+  {
+    "case": "TC-M02 mild profanity",
+    "input": "This code is shit and the documentation is damn near useless honestly.",
+    "result": {
+      "overallScore": 34,
+      "grade": "FLAGGED",
+      "flagged": true,
+      "labels": [
+        "EXPLICIT"
+      ],
+      "summary": "Flagged for EXPLICIT content (Score: 34/100)",
+      "categories": {
+        "sexist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "sexual": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "explicit": {
+          "score": 40,
+          "flagged": true,
+          "matches": [
+            "shit"
+          ]
+        },
+        "eighteenPlus": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "racist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        }
+      },
+      "analyzedAt": "2026-10-08T04:10:48.862Z"
+    }
+  },
+  {
+    "case": "TC-M03 severe explicit + sexual",
+    "input": "This fucking site is full of porn and hardcore garbage, absolute filth.",
+    "result": {
+      "overallScore": 89,
+      "grade": "CRITICAL",
+      "flagged": true,
+      "labels": [
+        "SEXUAL",
+        "EXPLICIT"
+      ],
+      "summary": "Flagged for SEXUAL, EXPLICIT content (Score: 89/100)",
+      "categories": {
+        "sexist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "sexual": {
+          "score": 100,
+          "flagged": true,
+          "matches": [
+            "porn"
+          ]
+        },
+        "explicit": {
+          "score": 100,
+          "flagged": true,
+          "matches": [
+            "fucking"
+          ]
+        },
+        "eighteenPlus": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "racist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        }
+      },
+      "analyzedAt": "2026-10-08T04:10:48.862Z"
+    }
+  },
+  {
+    "case": "TC-M04 racist/hate content",
+    "input": "All immigrants should be deported, they are inferior people ruining our country.",
+    "result": {
+      "overallScore": 0,
+      "grade": "CLEAN",
+      "flagged": false,
+      "labels": [],
+      "summary": "Clean and safe content",
+      "categories": {
+        "sexist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "sexual": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "explicit": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "eighteenPlus": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "racist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        }
+      },
+      "analyzedAt": "2026-10-08T04:10:48.862Z"
+    }
+  },
+  {
+    "case": "TC-M05 leetspeak obfuscation",
+    "input": "th1s 1s such bullsh1t y0u fuck1ng 1d10t",
+    "result": {
+      "overallScore": 68,
+      "grade": "FLAGGED",
+      "flagged": true,
+      "labels": [
+        "EXPLICIT"
+      ],
+      "summary": "Flagged for EXPLICIT content (Score: 68/100)",
+      "categories": {
+        "sexist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "sexual": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "explicit": {
+          "score": 80,
+          "flagged": true,
+          "matches": [
+            "fucking",
+            "bullshit"
+          ]
+        },
+        "eighteenPlus": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "racist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        }
+      },
+      "analyzedAt": "2026-10-08T04:10:48.862Z"
+    }
+  },
+  {
+    "case": "TC-M06 borderline adult",
+    "input": "The casino review covers blackjack strategies and where to find the best whiskey bars downtown.",
+    "result": {
+      "overallScore": 85,
+      "grade": "CRITICAL",
+      "flagged": true,
+      "labels": [
+        "18+"
+      ],
+      "summary": "Flagged for 18+ content (Score: 85/100)",
+      "categories": {
+        "sexist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "sexual": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "explicit": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        },
+        "eighteenPlus": {
+          "score": 100,
+          "flagged": true,
+          "matches": [
+            "casino",
+            "blackjack",
+            "whiskey"
+          ]
+        },
+        "racist": {
+          "score": 0,
+          "flagged": false,
+          "matches": []
+        }
+      },
+      "analyzedAt": "2026-10-08T04:10:48.862Z"
+    }
+  }
+]

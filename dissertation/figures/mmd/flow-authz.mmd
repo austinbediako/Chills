@@ -1,0 +1,11 @@
+flowchart TD
+    A[incoming request] --> B{route needs auth?}
+    B -->|no| Z[public handler]
+    B -->|yes| C[protect: verify Bearer JWT]
+    C -->|bad token| X[401]
+    C -->|valid| D[load req.user]
+    D --> E{role check?}
+    E -->|fails| Y[403]
+    E -->|pass or none| F{ownership check?}
+    F -->|fails| Y
+    F -->|pass or none| G[controller]

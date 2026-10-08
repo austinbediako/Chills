@@ -1,0 +1,9 @@
+flowchart LR
+    A[GET /feed?tab] --> B{tab}
+    B -->|for-you| C[recommendation pipeline]
+    B -->|following| D[merge posts + reposts of follows, chrono]
+    C --> E[16 stages: hydrate → source → filter → score → diversify → topK → preview]
+    D --> F[paginate merged timeline]
+    E --> G[items envelope]
+    F --> G
+    G --> H[client renders cards + accumulates seenIds]

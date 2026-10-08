@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant RV as Reviewer
+    participant FE as Audit UI
+    participant API as API
+    participant MS as moderationService
+    participant D as MongoDB
+    RV->>FE: "Re-run Machine Scan (All)"
+    FE->>API: POST /api/submissions/moderation/rescan-all
+    API->>D: load all submissions
+    loop each submission
+        API->>MS: scanContent(title,abstract,content,tags)
+        MS-->>API: {grade, scores, matches, labels}
+        API->>D: overwrite moderation subdocument
+    end
+    API-->>FE: {rescanned: n}
+    FE->>API: GET /api/submissions/moderation/audit
+    API-->>FE: aggregate counters + per-item rows
+    FE-->>RV: refreshed dashboard

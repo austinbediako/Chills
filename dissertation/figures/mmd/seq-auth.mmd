@@ -1,0 +1,27 @@
+sequenceDiagram
+  actor U as User
+  participant F as React SPA (LoginForm)
+  participant A as Express /api/auth
+  participant M as authMiddleware
+  participant DB as MongoDB Atlas
+
+  U->>F: email + password
+  F->>F: client-side validation (express-style rules)
+  F->>A: POST /api/auth/login
+  A->>DB: find user by email
+  DB-->>A: user doc
+  A->>A: bcrypt.compare(password, hash)
+  alt invalid credentials
+    A-->>F: 401 Unauthorized
+    F-->>U: "Sign In Failed" alert
+  else valid
+    A->>A: generateToken(user._id) — JWT signed (JWT_SECRET)
+    A-->>F: 200 { user fields, token }
+    F->>F: localStorage['user'] = response
+    F->>F: navigate to intended route or /
+  end
+  Note over F,A: subsequent API calls attach Authorization: Bearer <token>
+  F->>A: GET /api/submissions/feed (Bearer token)
+  A->>M: protect — verify JWT, load req.user
+  M-->>A: authenticated user
+  A-->>F: 200 feed payload

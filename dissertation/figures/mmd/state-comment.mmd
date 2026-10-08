@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> Visible : posted
+    Visible --> Liked : like toggle
+    Liked --> Visible : unlike
+    Visible --> HasReplies : reply added
+    HasReplies --> Visible : replies deleted
+    Visible --> Flagged : moderation/admin flag
+    Flagged --> Visible : cleared
+    Visible --> [*] : deleted by author/admin

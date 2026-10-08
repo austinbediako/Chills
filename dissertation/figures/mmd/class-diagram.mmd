@@ -1,0 +1,57 @@
+classDiagram
+    class User {
+        +ObjectId _id
+        +String username
+        +String email
+        +String password
+        +String name, bio, avatar
+        +String role
+        +ObjectId[] followers
+        +ObjectId[] following
+        +toJSON() strips password
+    }
+    class Submission {
+        +ObjectId _id
+        +String title, slug, abstract
+        +String content
+        +ObjectId author
+        +String status
+        +Boolean isDraft
+        +ObjectId draftOf
+        +ObjectId category
+        +String[] tags
+        +String image
+        +Number readTime
+        +Doc moderation
+    }
+    class Interaction {
+        +ObjectId submission
+        +ObjectId user
+        +String type
+        +String bookmarkFolder
+        +String quote
+    }
+    class Comment {
+        +ObjectId submission
+        +ObjectId author
+        +String content
+        +Boolean flagged
+        +Number likes
+        +ObjectId[] likedBy
+        +Reply[] replies
+    }
+    class Category {
+        +String name, slug
+        +String description
+    }
+    class ReviewNote {
+        +ObjectId submission
+        +ObjectId reviewer
+        +String note
+    }
+    User "1" --> "*" Submission : authors
+    User "1" --> "*" Interaction : engages
+    Submission "1" --> "*" Interaction : receives
+    Submission "1" --> "*" Comment : discussed by
+    Submission "1" --> "*" ReviewNote : audited by
+    Category "1" --> "*" Submission : classifies

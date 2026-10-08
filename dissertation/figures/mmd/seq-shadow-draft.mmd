@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant AU as Author
+    participant FE as WritePage
+    participant API as API
+    participant D as MongoDB
+    AU->>FE: open published story for edit
+    FE->>API: GET /api/submissions/:id
+    API-->>FE: live document
+    AU->>FE: save changes
+    FE->>API: PUT /api/submissions/:id
+    API->>D: status == PUBLISHED ?
+    alt published
+        API->>D: create copy with draftOf = :id
+        D-->>API: shadow draft saved
+        API-->>FE: shadow draft returned (live untouched)
+    else not published
+        API->>D: update document in place
+        API-->>FE: updated
+    end
+    AU->>FE: resubmit shadow draft
+    FE->>API: submit draft
+    API->>D: moderation rescan, status → PENDING_REVIEW
+    Note over D: Live story remains PUBLISHED until approval replaces it

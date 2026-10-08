@@ -1,0 +1,9 @@
+sequenceDiagram
+    participant FE as HomePage
+    participant API as API
+    participant D as MongoDB
+    FE->>API: GET /api/users/featured-authors
+    API->>D: aggregate authors: stories count, total likes, followers
+    API->>API: score = stories x20 + likes x8 + followers x12
+    API-->>FE: ranked author list
+    FE-->>FE: featured authors rail

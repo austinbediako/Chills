@@ -1,0 +1,54 @@
+PROJECT GUIDELINE 
+
+TABLE OF CONTENTS
+
+CHAPTER ONE: INTRODUCTION 	
+	•	Introduction (explain key terms and constructs)
+	•	Background (give the background to the study)
+	•	Research Problem Statement	
+	•	Research Questions (options)	
+	•	Research Aims & Objectives	
+	•	Limitations/Scope of the Study	
+	•	Research Methodology (Brief)	
+	•	Organization of the project (Discuss summary of all the chapters)
+
+
+CHAPTER TWO: LITERATURE REVIEW	
+	•	Literature on the topic area - sources consulted must be directly relevant to the research
+	•	Ensure literature cited is effective, up to date, and authoritative
+	•	You must locate primary and secondary literature sources
+	•	Ensure you give sufficient credit given to other researchers and authors
+	•	Review two or three similar systems (their features, benefits, and drawbacks)
+
+CHAPTER THREE: SYSTEM ANALYSIS AND DESIGN 
+	•	Describe methodology adopted for this project (agile, RAP, prototyping, waterfall, etc)
+	•	Requirements analysis (functional and non-functional)
+	•	Input Design
+	•	Output design
+	•	Database design
+	•	Use Cases, Flowcharts, Class diagrams, sequence diagrams, component diagrams, Pseudocodes, etc
+	•	System/architecture/network design diagram
+	•	Hardware/software requirements
+
+CHAPTER FOUR: IMPLEMENTATION AND EVALUATION 
+	•	Perform and present the experiment/system
+	•	Testing the system/test data
+	•	Justification of analyses, descriptions, and explanations of the phenomenon observed
+
+CHAPTER FIVE: CONCLUSION & FUTURE WORKS	
+	•	Summary of results
+	•	Recommendations
+	•	Future work
+	•	Justification of conclusions in view of data and their analysis
+
+
+REFERENCES
+
+APA style of referencing	
+
+APPENDICES	
+
+APPENDIX A
+
+APPENDIX B	
+

@@ -1,0 +1,23 @@
+sequenceDiagram
+  actor R as Reader
+  participant FE as React (article/feed card)
+  participant API as Express API
+  participant DB as MongoDB
+
+  R->>FE: like / bookmark / repost story
+  FE->>API: POST /api/submissions/:id/interact { type }
+  API->>DB: upsert Interaction (user, submission, type)
+  DB-->>API: updated counts
+  API-->>FE: 200 { counts }
+  FE-->>R: optimistic UI update (Redux)
+
+  R->>FE: comment on story
+  FE->>API: POST /api/comments { submission, content, parent? }
+  API->>DB: create Comment
+  API-->>FE: 201 comment
+  FE-->>R: comment appears in thread
+
+  R->>FE: follow author
+  FE->>API: POST /api/users/:id/follow
+  API->>DB: push user↔author into following/followers
+  API-->>FE: 200 — affects future in-network feed candidates

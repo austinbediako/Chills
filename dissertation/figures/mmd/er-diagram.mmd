@@ -1,0 +1,70 @@
+erDiagram
+  USER ||--o{ SUBMISSION : authors
+  USER ||--o{ COMMENT : writes
+  USER ||--o{ INTERACTION : performs
+  USER ||--o{ REVIEWNOTE : "reviews (as reviewer)"
+  SUBMISSION ||--o{ COMMENT : has
+  SUBMISSION ||--o{ INTERACTION : receives
+  SUBMISSION ||--o{ REVIEWNOTE : "reviewed by"
+  SUBMISSION ||--o| SUBMISSION : "draftOf / draftRef"
+  CATEGORY ||--o{ SUBMISSION : classifies
+  USER ||--o{ USER : "followers / following"
+
+  USER {
+    ObjectId _id PK
+    string username UK
+    string email UK
+    string password "bcrypt hash"
+    string name
+    string bio
+    string avatar
+    string role "student|reviewer|admin"
+    boolean isActive
+    string gender
+    string coverImage
+    ObjectId[] followers FK
+    ObjectId[] following FK
+  }
+  SUBMISSION {
+    ObjectId _id PK
+    string title
+    string slug UK
+    string abstract
+    string content "HTML (Quill)"
+    ObjectId author FK
+    string status "DRAFT|PENDING_REVIEW|REVISIONS_REQUESTED|APPROVED|PUBLISHED|ARCHIVED"
+    boolean isDraft
+    ObjectId draftOf FK
+    ObjectId draftRef FK
+    ObjectId category FK
+    string[] tags
+    string image
+    string readTime
+    object moderation "scores, grade, labels"
+  }
+  COMMENT {
+    ObjectId _id PK
+    ObjectId author FK
+    ObjectId submission FK
+    string content
+    ObjectId parent FK
+  }
+  CATEGORY {
+    ObjectId _id PK
+    string name
+    string slug
+    string description
+  }
+  INTERACTION {
+    ObjectId _id PK
+    ObjectId user FK
+    ObjectId submission FK
+    string type "like|bookmark|repost|view"
+  }
+  REVIEWNOTE {
+    ObjectId _id PK
+    ObjectId submission FK
+    ObjectId reviewer FK
+    string note
+    string decision
+  }

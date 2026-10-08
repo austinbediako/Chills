@@ -1,0 +1,130 @@
+[
+  {
+    "endpoint": "/api/submissions",
+    "auth": false,
+    "url": "/api/submissions",
+    "status": 200,
+    "times": [
+      18,
+      9,
+      8,
+      9,
+      7
+    ],
+    "avg": 10,
+    "min": 7,
+    "max": 18
+  },
+  {
+    "endpoint": "/api/submissions/feed?tab=for-you&page=1&limit=20",
+    "auth": true,
+    "url": "/api/submissions/feed?tab=for-you&page=1&limit=20",
+    "status": 200,
+    "times": [
+      19,
+      14,
+      17,
+      14,
+      10
+    ],
+    "avg": 15,
+    "min": 10,
+    "max": 19
+  },
+  {
+    "endpoint": "/api/submissions/feed?tab=following&page=1&limit=20",
+    "auth": true,
+    "url": "/api/submissions/feed?tab=following&page=1&limit=20",
+    "status": 200,
+    "times": [
+      7,
+      7,
+      7,
+      8,
+      7
+    ],
+    "avg": 7,
+    "min": 7,
+    "max": 8
+  },
+  {
+    "endpoint": "/api/submissions/search/explore",
+    "auth": false,
+    "url": "/api/submissions/search/explore",
+    "status": 200,
+    "times": [
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "avg": 0,
+    "min": 0,
+    "max": 1
+  },
+  {
+    "endpoint": "/api/submissions/popular/tags",
+    "auth": false,
+    "url": "/api/submissions/popular/tags",
+    "status": 200,
+    "times": [
+      3,
+      2,
+      2,
+      2,
+      2
+    ],
+    "avg": 2,
+    "min": 2,
+    "max": 3
+  },
+  {
+    "endpoint": "/api/categories",
+    "auth": false,
+    "url": "/api/categories",
+    "status": 200,
+    "times": [
+      3,
+      2,
+      1,
+      1,
+      1
+    ],
+    "avg": 2,
+    "min": 1,
+    "max": 3
+  },
+  {
+    "endpoint": "/api/users/authors",
+    "auth": false,
+    "url": "/api/users/authors",
+    "status": 200,
+    "times": [
+      2,
+      2,
+      2,
+      1,
+      1
+    ],
+    "avg": 2,
+    "min": 1,
+    "max": 2
+  },
+  {
+    "endpoint": "/api/submissions/moderation/audit",
+    "auth": true,
+    "url": "/api/submissions/moderation/audit",
+    "status": 200,
+    "times": [
+      11,
+      10,
+      8,
+      7,
+      8
+    ],
+    "avg": 9,
+    "min": 7,
+    "max": 11
+  }
+]

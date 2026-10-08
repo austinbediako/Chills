@@ -1,0 +1,10 @@
+flowchart TD
+    A[Admin opens /authors] --> B[AdminRoute check client-side]
+    B --> C[list + search members]
+    C --> D{action}
+    D -->|change role| E[PATCH /api/users/:id role]
+    D -->|activate/deactivate| F[PATCH /api/users/:id/status]
+    E --> G[isAdmin re-verified server-side]
+    F --> G
+    G -->|deny| H[403]
+    G -->|allow| I[update persisted, audit via response]
