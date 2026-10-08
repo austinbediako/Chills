@@ -31,7 +31,6 @@ export const ProfilePage: React.FC = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
@@ -200,42 +199,25 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
+  const [passwordError, setPasswordError] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (profileData.password) {
-      if (profileData.password !== profileData.confirmPassword) {
-        setError('Passwords do not match');
-        dispatch(showNotification({ message: 'Passwords do not match', type: 'error' }));
-        return;
-      }
-      if (profileData.password.length < 6) {
-        setError('Password must be at least 6 characters');
-        dispatch(showNotification({ message: 'Password must be at least 6 characters', type: 'error' }));
-        return;
-      }
-    }
-
     setIsSaving(true);
     try {
-      const updatePayload: any = {
+      const success = await updateUserProfile({
         name: profileData.name.trim(),
         username: profileData.username.trim(),
         gender: profileData.gender,
         bio: profileData.bio.trim(),
         avatar: profileData.avatar,
         coverImage: profileData.coverImage,
-      };
-
-      if (profileData.password) {
-        updatePayload.password = profileData.password;
-      }
-
-      const success = await updateUserProfile(updatePayload);
+      });
 
       if (success) {
-        dispatch(showNotification({ message: 'Profile updated successfully!', type: 'success' }));
         navigate(`/@${profileData.username || user?.username}`);
       }
     } catch (err: any) {
@@ -247,6 +229,40 @@ export const ProfilePage: React.FC = () => {
       }));
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (!profileData.password || profileData.password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      dispatch(showNotification({ message: 'Password must be at least 6 characters', type: 'error' }));
+      return;
+    }
+    if (profileData.password !== profileData.confirmPassword) {
+      setPasswordError('Passwords do not match');
+      dispatch(showNotification({ message: 'Passwords do not match', type: 'error' }));
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const success = await updateUserProfile({ password: profileData.password });
+      if (success) {
+        setProfileData((prev) => ({ ...prev, password: '', confirmPassword: '' }));
+        setShowPassword(false);
+      }
+    } catch (err: any) {
+      console.error('Error changing password:', err);
+      setPasswordError(err.response?.data?.message || 'Failed to update password');
+      dispatch(showNotification({ 
+        message: err.response?.data?.message || 'Failed to update password', 
+        type: 'error' 
+      }));
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -282,23 +298,6 @@ export const ProfilePage: React.FC = () => {
             >
               View Profile
             </Link>
-            <button
-              onClick={handleSubmit}
-              disabled={isSaving || isUploadingAvatar || isUploadingCover}
-              className="px-6 py-2 rounded-full bg-dark-100 text-light-100 dark:bg-light-100 dark:text-dark-100 text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 size={13} className="animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Check size={14} />
-                  <span>Save Changes</span>
-                </>
-              )}
-            </button>
           </div>
         </div>
 
@@ -400,115 +399,173 @@ export const ProfilePage: React.FC = () => {
             </div>
           )}
 
-          {/* ── Form Fields: Styled Elegantly into the Profile Layout ── */}
-          <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
-            
-            {/* Name & Handle Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-dark-300 dark:text-light-300 mb-1.5">
-                  Display Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={profileData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Your full name"
-                  className="w-full px-4 py-2.5 text-sm rounded-xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500 font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-dark-300 dark:text-light-300 mb-1.5">
-                  Username (@handle)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-dark-400 dark:text-light-400 font-mono text-sm">
-                    @
-                  </span>
-                  <input
-                    type="text"
-                    name="username"
-                    value={profileData.username}
-                    onChange={handleChange}
-                    required
-                    placeholder="username"
-                    className="w-full pl-8 pr-4 py-2.5 text-sm rounded-xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Bio Field */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-xs font-bold text-dark-300 dark:text-light-300">
-                  Bio / About You
-                </label>
-                <span className="text-[11px] text-dark-400 dark:text-light-400">
-                  {profileData.bio.length}/280
-                </span>
-              </div>
-              <textarea
-                name="bio"
-                rows={3}
-                maxLength={280}
-                value={profileData.bio}
-                onChange={handleChange}
-                placeholder="Share your background, what you write about, or interests..."
-                className="w-full p-4 text-sm rounded-2xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500 font-serif resize-none leading-relaxed"
-              />
-            </div>
-
-            {/* Gender & Email Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-dark-300 dark:text-light-300 mb-1.5">
-                  Gender
-                </label>
-                <select
-                  name="gender"
-                  value={profileData.gender}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 text-sm rounded-xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="non-binary">Non-binary</option>
-                  <option value="other">Other / Prefer not to say</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-dark-300 dark:text-light-300 mb-1.5">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={profileData.email}
-                  disabled
-                  className="w-full px-4 py-2.5 text-sm rounded-xl bg-light-300/40 dark:bg-dark-300/40 border border-light-300 dark:border-dark-300 text-dark-400 dark:text-light-400 cursor-not-allowed"
-                  title="Contact support to change account email"
-                />
-              </div>
-            </div>
-
-            {/* Change Password Accordion */}
-            <div className="pt-2 border-t border-light-300/60 dark:border-dark-300/60">
+          {/* Settings Tabs */}
+          <div className="px-6 border-b border-light-300/60 dark:border-dark-300/60">
+            <div className="flex gap-6">
               <button
                 type="button"
-                onClick={() => setShowPasswordSection(!showPasswordSection)}
-                className="text-xs font-bold text-primary-600 dark:text-primary-400 flex items-center gap-1.5 hover:underline"
+                onClick={() => setActiveTab('profile')}
+                className={`pb-3 text-sm font-bold transition-colors border-b-2 ${
+                  activeTab === 'profile'
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-dark-400 dark:text-light-400 hover:text-dark-100 dark:hover:text-light-100'
+                }`}
               >
-                <Lock size={13} />
-                <span>{showPasswordSection ? 'Cancel Password Change' : 'Change Password'}</span>
+                Profile
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('security')}
+                className={`pb-3 text-sm font-bold transition-colors border-b-2 ${
+                  activeTab === 'security'
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-dark-400 dark:text-light-400 hover:text-dark-100 dark:hover:text-light-100'
+                }`}
+              >
+                Security
+              </button>
+            </div>
+          </div>
 
-              {showPasswordSection && (
-                <div className="mt-4 p-4 rounded-2xl bg-light-200/30 dark:bg-dark-200/30 border border-light-300/60 dark:border-dark-300/60 space-y-4">
+          <div className="px-6 py-6">
+            {activeTab === 'profile' && (
+              <form onSubmit={handleProfileSave} className="space-y-6 max-w-3xl">
+                {/* Name & Handle Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-dark-300 dark:text-light-300 mb-1.5">
+                      Display Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={profileData.name}
+                      onChange={handleChange}
+                      required
+                      placeholder="Your full name"
+                      className="w-full px-4 py-2.5 text-sm rounded-xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500 font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-dark-300 dark:text-light-300 mb-1.5">
+                      Username (@handle)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-2.5 text-dark-400 dark:text-light-400 font-mono text-sm">
+                        @
+                      </span>
+                      <input
+                        type="text"
+                        name="username"
+                        value={profileData.username}
+                        onChange={handleChange}
+                        required
+                        placeholder="username"
+                        className="w-full pl-8 pr-4 py-2.5 text-sm rounded-xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bio Field */}
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="block text-xs font-bold text-dark-300 dark:text-light-300">
+                      Bio / About You
+                    </label>
+                    <span className="text-[11px] text-dark-400 dark:text-light-400">
+                      {profileData.bio.length}/280
+                    </span>
+                  </div>
+                  <textarea
+                    name="bio"
+                    rows={3}
+                    maxLength={280}
+                    value={profileData.bio}
+                    onChange={handleChange}
+                    placeholder="Share your background, what you write about, or interests..."
+                    className="w-full p-4 text-sm rounded-2xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500 font-serif resize-none leading-relaxed"
+                  />
+                </div>
+
+                {/* Gender & Email Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-dark-300 dark:text-light-300 mb-1.5">
+                      Gender
+                    </label>
+                    <select
+                      name="gender"
+                      value={profileData.gender}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 text-sm rounded-xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="non-binary">Non-binary</option>
+                      <option value="other">Other / Prefer not to say</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-dark-300 dark:text-light-300 mb-1.5">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={profileData.email}
+                      disabled
+                      className="w-full px-4 py-2.5 text-sm rounded-xl bg-light-300/40 dark:bg-dark-300/40 border border-light-300 dark:border-dark-300 text-dark-400 dark:text-light-400 cursor-not-allowed"
+                      title="Contact support to change account email"
+                    />
+                  </div>
+                </div>
+
+                {/* Save Profile Button */}
+                <div className="pt-6 flex items-center justify-end gap-3">
+                  <Link
+                    to={`/@${profileData.username || user?.username}`}
+                    className="px-5 py-2.5 rounded-full border border-light-300 dark:border-dark-300 text-xs font-bold hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
+                  >
+                    Cancel
+                  </Link>
+                  <button
+                    type="submit"
+                    disabled={isSaving || isUploadingAvatar || isUploadingCover}
+                    className="px-8 py-2.5 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs transition-transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>Saving Profile...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check size={15} />
+                        <span>Save Profile</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {activeTab === 'security' && (
+              <form onSubmit={handlePasswordChange} className="space-y-6 max-w-3xl">
+                <div className="p-5 rounded-2xl bg-light-200/30 dark:bg-dark-200/30 border border-light-300/60 dark:border-dark-300/60">
+                  <h3 className="text-sm font-bold text-dark-100 dark:text-light-100 mb-4 flex items-center gap-2">
+                    <Lock size={16} className="text-primary-500" />
+                    Change Password
+                  </h3>
+
+                  {passwordError && (
+                    <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs font-medium">
+                      {passwordError}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-dark-300 dark:text-light-300 mb-1">
@@ -526,7 +583,7 @@ export const ProfilePage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-2.5 text-dark-400 hover:text-dark-100"
+                          className="absolute right-3 top-2.5 text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100"
                         >
                           {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                         </button>
@@ -548,36 +605,35 @@ export const ProfilePage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Bottom Save Action Button */}
-            <div className="pt-6 flex items-center justify-end gap-3">
-              <Link
-                to={`/@${profileData.username || user?.username}`}
-                className="px-5 py-2.5 rounded-full border border-light-300 dark:border-dark-300 text-xs font-bold hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
-              >
-                Cancel
-              </Link>
-              <button
-                type="submit"
-                disabled={isSaving || isUploadingAvatar || isUploadingCover}
-                className="px-8 py-2.5 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs transition-transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1.5 disabled:opacity-50"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>Saving Profile...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check size={15} />
-                    <span>Save Changes</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <Link
+                    to={`/@${profileData.username || user?.username}`}
+                    className="px-5 py-2.5 rounded-full border border-light-300 dark:border-dark-300 text-xs font-bold hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
+                  >
+                    Cancel
+                  </Link>
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="px-8 py-2.5 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs transition-transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isChangingPassword ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock size={15} />
+                        <span>Update Password</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
 
         </div>
 

@@ -25,40 +25,57 @@ async function findUserByIdentifier(identifier) {
 // @access  Public
 router.get(
   '/featured-authors',
+  optionalAuth,
   asyncHandler(async (req, res) => {
-    const users = await User.find({}).select('name username avatar bio role followers following');
+    const excludeId = req.user?._id ? String(req.user._id) : (req.query.excludeId ? String(req.query.excludeId) : null);
+    const excludeUsername = req.user?.username
+      ? req.user.username.toLowerCase()
+      : (req.query.excludeUsername ? String(req.query.excludeUsername).toLowerCase() : null);
 
-    const rankedAuthors = await Promise.all(
-      users.map(async (u) => {
-        const storiesCount = await Submission.countDocuments({ author: u._id, status: 'PUBLISHED' });
-        
-        const authorStories = await Submission.find({ author: u._id, status: 'PUBLISHED' }).select('_id');
-        const storyIds = authorStories.map((s) => s._id);
-        const totalLikes = storyIds.length > 0 
-          ? await Interaction.countDocuments({ submission: { $in: storyIds }, type: 'LIKE' })
-          : 0;
+    const query = {};
+    if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
+      query._id = { $ne: excludeId };
+    }
 
-        const followersCount = Array.isArray(u.followers) ? u.followers.length : 0;
-        const followingCount = Array.isArray(u.following) ? u.following.length : 0;
+    const users = await User.find(query).select('name username avatar bio role followers following');
 
-        // Algorithm score: storiesCount * 20 + totalLikes * 8 + followersCount * 12
-        const score = (storiesCount * 20) + (totalLikes * 8) + (followersCount * 12);
+    const rankedAuthors = (
+      await Promise.all(
+        users.map(async (u) => {
+          if (excludeUsername && u.username && u.username.toLowerCase() === excludeUsername) {
+            return null;
+          }
 
-        return {
-          _id: u._id,
-          name: u.name,
-          username: u.username,
-          avatar: u.avatar,
-          bio: u.bio,
-          role: u.role,
-          storiesCount,
-          totalLikes,
-          followersCount,
-          followingCount,
-          featuredScore: score,
-        };
-      })
-    );
+          const storiesCount = await Submission.countDocuments({ author: u._id, status: 'PUBLISHED' });
+          
+          const authorStories = await Submission.find({ author: u._id, status: 'PUBLISHED' }).select('_id');
+          const storyIds = authorStories.map((s) => s._id);
+          const totalLikes = storyIds.length > 0 
+            ? await Interaction.countDocuments({ submission: { $in: storyIds }, type: 'LIKE' })
+            : 0;
+
+          const followersCount = Array.isArray(u.followers) ? u.followers.length : 0;
+          const followingCount = Array.isArray(u.following) ? u.following.length : 0;
+
+          // Algorithm score: storiesCount * 20 + totalLikes * 8 + followersCount * 12
+          const score = (storiesCount * 20) + (totalLikes * 8) + (followersCount * 12);
+
+          return {
+            _id: u._id,
+            name: u.name,
+            username: u.username,
+            avatar: u.avatar,
+            bio: u.bio,
+            role: u.role,
+            storiesCount,
+            totalLikes,
+            followersCount,
+            followingCount,
+            featuredScore: score,
+          };
+        })
+      )
+    ).filter(Boolean);
 
     const featured = rankedAuthors
       .filter((a) => a.storiesCount > 0 || a.featuredScore > 0)

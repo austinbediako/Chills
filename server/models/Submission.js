@@ -115,6 +115,12 @@ submissionSchema.index({ title: 'text', abstract: 'text', content: 'text', tags:
 // Add compound indexes for faster dashboard querying
 submissionSchema.index({ status: 1, author: 1 });
 
+// Indexes for the For You recommendation pipeline
+submissionSchema.index({ status: 1, isDraft: 1, createdAt: -1 });
+submissionSchema.index({ status: 1, isDraft: 1, author: 1, createdAt: -1 });
+submissionSchema.index({ status: 1, isDraft: 1, category: 1, createdAt: -1 });
+submissionSchema.index({ tags: 1, status: 1, isDraft: 1 });
+
 // Calculate read time before saving
 submissionSchema.pre('save', function (next) {
   if (this.isModified('content')) {

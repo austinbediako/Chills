@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, User as UserIcon, MessageSquare, Heart, Bookmark, ChevronRight, TrendingUp, Zap, Star, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../hooks/useAuth';
 
 interface Author {
   _id: string;
@@ -44,6 +45,7 @@ interface TagItem {
 }
 
 const AuthenticatedHomePage: React.FC = () => {
+  const { user } = useAuth();
   const [featuredPosts, setFeaturedPosts] = useState<Article[]>([]);
   const [recentPosts, setRecentPosts] = useState<Article[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -69,7 +71,13 @@ const AuthenticatedHomePage: React.FC = () => {
         setFeaturedPosts(featuredRes.data.submissions || []);
         setRecentPosts(recentRes.data.submissions || []);
         setCategories(catRes.data || []);
-        setAuthors(authorRes.data || []);
+        const rawAuthors = authorRes.data || [];
+        const currentUserId = user?._id ? String(user._id) : (user as any)?.id ? String((user as any).id) : '';
+        const currentHandle = user?.username ? user.username.toLowerCase() : '';
+        const filteredAuthors = rawAuthors.filter(
+          (a: any) => (!currentUserId || String(a._id) !== currentUserId) && (!currentHandle || a.username?.toLowerCase() !== currentHandle)
+        );
+        setAuthors(filteredAuthors);
         setTags(tagRes.data || []);
         if (recentRes.data.totalPages <= 1) {
           setHasMore(false);
@@ -82,7 +90,7 @@ const AuthenticatedHomePage: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -551,9 +559,13 @@ const AuthenticatedHomePage: React.FC = () => {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-8">
-          {/* Trending Categories */}
-          <div className="card p-6">
+        <aside className="lg:col-span-1">
+          <div
+            className="sticky space-y-8 pb-8"
+            style={{ top: 'min(1.5rem, calc(100vh - 100% - 1.5rem))' }}
+          >
+            {/* Trending Categories */}
+            <div className="card p-6">
             <h3 className="mb-4 text-xl font-bold font-heading text-dark-100 dark:text-light-100">
               Trending Categories
             </h3>
@@ -597,7 +609,14 @@ const AuthenticatedHomePage: React.FC = () => {
               </h3>
             </div>
             <div className="space-y-3.5">
-              {authors.slice(0, 5).map((author, idx) => (
+              {authors
+                .filter(
+                  (author) =>
+                    (!user?._id || String(author._id) !== String(user._id)) &&
+                    (!user?.username || author.username?.toLowerCase() !== user.username.toLowerCase())
+                )
+                .slice(0, 5)
+                .map((author, idx) => (
                 <div
                   key={author._id}
                   className="flex items-center justify-between group p-2 rounded-xl hover:bg-light-200 dark:hover:bg-dark-300 transition-colors"
@@ -658,6 +677,7 @@ const AuthenticatedHomePage: React.FC = () => {
             </div>
           </div>
         </div>
+      </aside>
       </div>
 
       {/* CTA Section */}

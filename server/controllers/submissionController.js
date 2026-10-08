@@ -9,6 +9,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import slugify from '../utils/slugify.js';
 import { validationResult } from 'express-validator';
 import { analyzeSubmission, executeMachineCallback } from '../services/moderationService.js';
+import { getForYouFeed } from '../services/recommendation/index.js';
 
 // @desc    Get all submissions
 // @route   GET /api/submissions
@@ -585,6 +586,16 @@ export const getSocialFeed = asyncHandler(async (req, res) => {
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.max(1, parseInt(limit) || 20);
   const currentUserId = req.user ? req.user._id : null;
+
+  if (tab === 'for-you') {
+    const result = await getForYouFeed({
+      user: req.user,
+      page: pageNum,
+      limit: limitNum,
+      seenIds: req.query.seenIds,
+    });
+    return res.json(result);
+  }
 
   let postQuery = { status: 'PUBLISHED', isDraft: { $ne: true } };
   let repostQuery = { type: 'REPOST' };

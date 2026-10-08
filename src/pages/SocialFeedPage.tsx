@@ -215,16 +215,26 @@ export const SocialFeedPage: React.FC = () => {
   useEffect(() => {
     const fetchSidebarData = async () => {
       try {
+        const token = user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');
+        const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
         const [authorsRes, tagsRes] = await Promise.allSettled([
-          axios.get('/api/users/featured-authors'),
+          axios.get('/api/users/featured-authors', authHeader),
           axios.get('/api/submissions/popular/tags'),
         ]);
 
         if (authorsRes.status === 'fulfilled' && Array.isArray(authorsRes.value.data)) {
-          setFeaturedAuthors(authorsRes.value.data.slice(0, 5));
+          const raw = authorsRes.value.data;
+          const currentId = user?._id ? String(user._id) : (user as any)?.id ? String((user as any).id) : '';
+          const currentHandle = user?.username ? user.username.toLowerCase() : '';
+          const filtered = raw.filter((a: any) => {
+            const aId = a._id ? String(a._id) : '';
+            const aUsername = a.username ? a.username.toLowerCase() : '';
+            return (!currentId || aId !== currentId) && (!currentHandle || aUsername !== currentHandle);
+          });
+          setFeaturedAuthors(filtered.slice(0, 5));
           if (user) {
             const initialFollowing = new Set<string>();
-            authorsRes.value.data.forEach((a: any) => {
+            filtered.forEach((a: any) => {
               if (Array.isArray(a.followers) && a.followers.includes(user._id)) {
                 initialFollowing.add(a._id);
               }
@@ -607,14 +617,14 @@ export const SocialFeedPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-light-100 dark:bg-dark-100 text-dark-100 dark:text-light-100 pb-16">
-      <div className="w-full px-0 sm:px-4 lg:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-light-100 dark:bg-dark-100 text-dark-100 dark:text-light-100">
+      <div className="w-full px-0 sm:px-4 lg:px-6 lg:h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 lg:h-full gap-6 pt-3 sm:pt-4">
           
           {/* ══════════════════════════════════════════════════════════════
               CENTER COLUMN: X-STYLE TIMELINE STREAM (8 Cols)
           ══════════════════════════════════════════════════════════════ */}
-          <main className="lg:col-span-8 border-x-0 sm:border-x border-light-300/60 dark:border-dark-300/60 min-h-screen bg-light-100 dark:bg-dark-100 rounded-none sm:rounded-2xl overflow-hidden shadow-sm">
+          <main className="lg:col-span-8 flex flex-col min-h-screen lg:min-h-0 lg:h-full lg:overflow-y-auto border-x-0 sm:border-x border-light-300/60 dark:border-dark-300/60 bg-light-100 dark:bg-dark-100 rounded-none sm:rounded-2xl shadow-sm">
             
             {/* ── Sticky Top Bar & Timeline Tabs ── */}
             <div className="sticky top-0 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-xl border-b border-light-300/60 dark:border-dark-300/60">
@@ -678,39 +688,6 @@ export const SocialFeedPage: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {/* ── Top Composer Box ("What's happening?") ── */}
-            {isAuthenticated && (
-              <div className="p-4 sm:p-5 border-b border-light-300/60 dark:border-dark-300/60 bg-light-200/30 dark:bg-dark-200/30">
-                <div className="flex gap-3.5">
-                  <img
-                    src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`}
-                    alt="avatar"
-                    className="h-10 w-10 rounded-full object-cover border border-light-300 dark:border-dark-300 shrink-0"
-                  />
-                  <div className="flex-1 space-y-3">
-                    <div
-                      onClick={() => navigate('/write')}
-                      className="w-full px-4 py-3 rounded-2xl bg-light-100 dark:bg-dark-100 border border-light-300/80 dark:border-dark-300/80 text-dark-400 dark:text-light-400 text-sm cursor-pointer hover:border-primary-500/50 transition-colors shadow-inner"
-                    >
-                      What's on your mind? Share an insight or write a full story...
-                    </div>
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="flex items-center gap-2 text-xs text-dark-400 dark:text-light-400">
-                        <Sparkles size={14} className="text-amber-500" />
-                        <span>Instant publishing with machine audit</span>
-                      </div>
-                      <Link
-                        to="/write"
-                        className="px-5 py-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs transition-transform hover:scale-105 active:scale-95 shadow-sm"
-                      >
-                        Publish Story
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* ── Feed Stream ── */}
             {loadingFeed ? (
@@ -1204,6 +1181,33 @@ export const SocialFeedPage: React.FC = () => {
                     </button>
                   </div>
                 )}
+
+                {/* End of feed */}
+                {!hasMore && feedItems.length > 0 && (
+                  <div className="py-10 px-6 text-center border-t border-light-300/60 dark:border-dark-300/60">
+                    <div className="h-20 w-20 mx-auto mb-5 rounded-3xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg">
+                      <svg
+                        viewBox="0 0 64 64"
+                        className="w-10 h-10 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 12h24l8 12v32a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z" />
+                        <path d="M20 12v-4a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v4" />
+                        <path d="M20 28h24M20 38h16M20 48h12" />
+                        <path d="M44 42l4 4 8-10" />
+                        <path d="M12 8l2-2M6 14l2-2M14 18l2-2" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base font-bold font-heading mb-1">You're all caught up</h3>
+                    <p className="text-sm text-dark-400 dark:text-light-400 font-serif">
+                      You've reached the end of the feed.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </main>
@@ -1211,8 +1215,8 @@ export const SocialFeedPage: React.FC = () => {
           {/* ══════════════════════════════════════════════════════════════
               RIGHT COLUMN: SIDEBAR WIDGETS (X-STYLE 4 COLS)
           ══════════════════════════════════════════════════════════════ */}
-          <aside className="hidden lg:block lg:col-span-4">
-            <div className="sticky top-24 space-y-5 max-h-[calc(100vh-7rem)] overflow-y-auto no-scrollbar pb-6">
+          <aside className="hidden lg:block lg:col-span-4 lg:h-full lg:overflow-y-auto">
+            <div className="space-y-6 pb-6">
               
               {/* Search Box */}
               <div className="p-4 rounded-2xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300/60 dark:border-dark-300/60 shadow-sm">
@@ -1242,7 +1246,16 @@ export const SocialFeedPage: React.FC = () => {
                   </h3>
                 </div>
                 <div className="space-y-4">
-                  {featuredAuthors.map((author) => {
+                  {featuredAuthors
+                    .filter((author) => {
+                      if (!author) return false;
+                      const aId = author._id ? String(author._id) : '';
+                      const currentId = user?._id ? String(user._id) : (user as any)?.id ? String((user as any).id) : '';
+                      const aUsername = author.username ? author.username.toLowerCase() : '';
+                      const currentHandle = user?.username ? user.username.toLowerCase() : '';
+                      return (!currentId || aId !== currentId) && (!currentHandle || aUsername !== currentHandle);
+                    })
+                    .map((author) => {
                     const isFollowing = followingAuthorIds.has(author._id);
                     return (
                       <div key={author._id} className="flex items-center justify-between gap-3">
@@ -1322,6 +1335,19 @@ export const SocialFeedPage: React.FC = () => {
                   <span>Start Writing</span>
                   <ArrowRight size={14} />
                 </Link>
+              </div>
+
+              {/* Sidebar Footer (Last Point) */}
+              <div className="px-3 pt-2 text-[11px] text-dark-400 dark:text-light-400 leading-relaxed flex flex-wrap items-center gap-x-3 gap-y-1">
+                <Link to="/about" className="hover:underline">About</Link>
+                <span>·</span>
+                <Link to="/contact" className="hover:underline">Help</Link>
+                <span>·</span>
+                <Link to="/explore" className="hover:underline">Explore</Link>
+                <span>·</span>
+                <Link to="/authors" className="hover:underline">Authors</Link>
+                <span>·</span>
+                <span>© {new Date().getFullYear()} KBlog</span>
               </div>
 
             </div>

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Calendar, Heart, Repeat, MessageSquare, Clock, 
   Settings, Check, UserPlus, UserMinus, ShieldCheck, Sparkles,
-  BookOpen, Bookmark, Camera, Pencil, Menu, Loader2, X
+  BookOpen, Bookmark, Camera, Pencil, Menu, Loader2, X, Search, UserX, SearchX
 } from 'lucide-react';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
@@ -87,6 +87,9 @@ const AuthorProfilePage: React.FC = () => {
   const [author, setAuthor] = useState<AuthorProfile | null>(null);
   const [loadingAuthor, setLoadingAuthor] = useState(true);
   const [authorNotFound, setAuthorNotFound] = useState(false);
+  const [suggestedAuthors, setSuggestedAuthors] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [searchNotFoundQuery, setSearchNotFoundQuery] = useState('');
 
   // File Inputs & Image Crop Modal State for Owner
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -159,6 +162,40 @@ const AuthorProfilePage: React.FC = () => {
   useEffect(() => {
     fetchAuthorProfile();
   }, [fetchAuthorProfile]);
+
+  // Fetch suggested active creators when account is not found
+  useEffect(() => {
+    if (!authorNotFound) return;
+    let isMounted = true;
+    setLoadingSuggestions(true);
+    axios
+      .get('/api/users/authors')
+      .then((res) => {
+        if (!isMounted) return;
+        const list = Array.isArray(res.data) ? res.data : [];
+        const cleanCurrent = (activeIdentifier || '').replace(/^@/, '').toLowerCase();
+        const currentUserId = user?._id ? String(user._id) : (user as any)?.id ? String((user as any).id) : '';
+        const currentUsername = user?.username ? user.username.toLowerCase() : '';
+        const filtered = list.filter(
+          (a: any) =>
+            a.username &&
+            a.username.toLowerCase() !== cleanCurrent &&
+            (!currentUserId || String(a._id) !== currentUserId) &&
+            (!currentUsername || a.username.toLowerCase() !== currentUsername)
+        );
+        setSuggestedAuthors(filtered.slice(0, 4));
+      })
+      .catch((err) => {
+        console.error('Failed to load suggested authors for 404 page:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingSuggestions(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authorNotFound, activeIdentifier]);
 
   // Reset tab cache when navigating between different authors
   useEffect(() => {
@@ -402,62 +439,214 @@ const AuthorProfilePage: React.FC = () => {
   if (authorNotFound || !author) {
     const displayHandle = (activeIdentifier || '').replace(/^@/, '');
     return (
-      <div className="max-w-5xl lg:max-w-6xl mx-auto border-x border-light-200 dark:border-dark-300 min-h-screen bg-light-100/50 dark:bg-dark-100/50 pb-20">
+      <div className="w-full max-w-4xl lg:max-w-5xl mx-auto sm:border-x border-light-300/70 dark:border-dark-300/70 min-h-screen bg-light-100 dark:bg-dark-100 flex flex-col pb-24 shadow-sm min-w-0">
         {/* Sticky Header Bar */}
-        <div className="sticky top-0 z-40 bg-light-100/80 dark:bg-dark-100/80 backdrop-blur-md px-4 py-3 flex items-center gap-6 border-b border-light-200 dark:border-dark-300">
+        <div className="sticky top-0 z-40 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md px-4 sm:px-6 py-2.5 flex items-center justify-between border-b border-light-300/70 dark:border-dark-300/70">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 -ml-1 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 text-dark-300 dark:text-light-300 transition-colors shrink-0"
+              aria-label="Back"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold font-heading text-dark-100 dark:text-light-100 leading-tight truncate">
+                Profile
+              </h2>
+              <p className="text-xs text-dark-400 dark:text-light-400 font-mono truncate">
+                @{displayHandle}
+              </p>
+            </div>
+          </div>
+
           <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
-            aria-label="Back"
+            onClick={() => dispatch(toggleSidebar())}
+            className="lg:hidden p-2 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 text-dark-400 dark:text-light-300 transition-colors shrink-0"
+            aria-label="Open navigation menu"
           >
-            <ArrowLeft size={20} />
+            <Menu size={20} />
           </button>
-          <div>
-            <h2 className="text-base font-bold font-heading">Profile</h2>
-            <p className="text-xs text-dark-400 dark:text-light-400">@{displayHandle}</p>
-          </div>
         </div>
 
-        {/* Placeholder Cover Banner */}
-        <div className="h-44 sm:h-56 bg-light-200 dark:bg-dark-200 w-full relative"></div>
-
-        {/* Empty Avatar Placeholder */}
-        <div className="px-6 relative -mt-16 sm:-mt-20 mb-6 flex justify-between items-end">
-          <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-full bg-light-100 dark:bg-dark-100 border-4 border-light-100 dark:border-dark-100 flex items-center justify-center text-dark-300 dark:text-light-400 shadow-md">
-            <UserMinus size={48} />
-          </div>
+        {/* Cover Banner (Proper Aspect Ratio & Modern Gradient Texture) */}
+        <div className="relative w-full aspect-[3/1] min-h-[160px] sm:min-h-[220px] md:min-h-[260px] max-h-[300px] bg-gradient-to-r from-light-300 via-light-200 to-light-300 dark:from-dark-300 dark:via-dark-200 dark:to-dark-300 overflow-hidden">
+          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-dark-950/20 via-transparent to-transparent"></div>
         </div>
 
-        {/* Account Not Found Content */}
-        <div className="px-6 py-8 max-w-lg mx-auto text-center space-y-4">
-          <div className="text-left mb-6">
-            <h3 className="text-xl font-bold font-heading text-dark-100 dark:text-light-100">
-              @{displayHandle}
-            </h3>
+        {/* Profile Header (Avatar and Handle Aligned Correctly) */}
+        <div className="px-4 sm:px-8 relative pb-6 border-b border-light-300/60 dark:border-dark-300/60">
+          <div className="flex justify-between items-end -mt-14 sm:-mt-20 mb-4">
+            <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-full bg-light-100 dark:bg-dark-100 border-4 sm:border-[5px] border-light-100 dark:border-dark-100 flex items-center justify-center text-dark-300 dark:text-light-400 shadow-xl ring-1 ring-light-300/50 dark:ring-dark-300/50">
+              <UserMinus className="w-12 h-12 sm:w-16 sm:h-16 stroke-[1.5]" />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Link
+                to="/explore"
+                className="px-4 py-2 rounded-full border border-light-300 dark:border-dark-300 text-xs sm:text-sm font-semibold hover:bg-light-200 dark:hover:bg-dark-200 transition-colors flex items-center gap-1.5 shadow-2xs"
+              >
+                <Sparkles size={14} className="text-primary-500" />
+                <span>Explore Creators</span>
+              </Link>
+            </div>
           </div>
-          <div className="py-6 space-y-2">
-            <h3 className="text-2xl font-extrabold font-heading text-dark-100 dark:text-light-100">
-              Account not found
-            </h3>
-            <p className="text-sm font-serif text-dark-400 dark:text-light-400 leading-relaxed">
-              This account doesn’t exist or has been removed. Try searching for another creator or explore the community timeline.
+
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-extrabold font-heading text-dark-100 dark:text-light-100">
+                @{displayHandle}
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                Account not found
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-dark-400 dark:text-light-400">
+              This handle isn’t associated with an active account on KBlog.
             </p>
           </div>
-          <div className="flex justify-center gap-3">
-            <Link
-              to="/feed"
-              className="px-6 py-2.5 rounded-full bg-dark-100 text-light-100 dark:bg-light-100 dark:text-dark-100 text-xs font-bold hover:scale-105 transition-all shadow-md inline-flex items-center gap-1.5"
+        </div>
+
+        {/* Account Not Found Recovery & Search Card */}
+        <div className="px-4 sm:px-8 py-8">
+          <div className="p-6 sm:p-10 rounded-2xl bg-light-200/50 dark:bg-dark-200/40 border border-light-300/70 dark:border-dark-300/70 text-center space-y-6">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center border border-primary-500/20 shadow-xs">
+              <SearchX className="w-7 h-7 sm:w-8 sm:h-8" />
+            </div>
+
+            <div className="space-y-2 max-w-lg mx-auto">
+              <h2 className="text-2xl sm:text-3xl font-extrabold font-heading text-dark-100 dark:text-light-100 tracking-tight">
+                Account not found
+              </h2>
+              <p className="text-sm sm:text-base font-serif text-dark-400 dark:text-light-400 leading-relaxed">
+                The account <span className="font-mono font-medium text-dark-200 dark:text-light-200">@{displayHandle}</span> doesn’t exist or has been removed. Try searching for another creator or explore the community timeline.
+              </p>
+            </div>
+
+            {/* Quick Search */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (searchNotFoundQuery.trim()) {
+                  navigate(`/explore?search=${encodeURIComponent(searchNotFoundQuery.trim())}`);
+                }
+              }}
+              className="max-w-md mx-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
             >
-              <ArrowLeft size={14} />
-              <span>Go to Timeline</span>
-            </Link>
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={searchNotFoundQuery}
+                  onChange={(e) => setSearchNotFoundQuery(e.target.value)}
+                  placeholder="Search creators, stories, topics..."
+                  className="input pl-10 pr-4 py-2.5 w-full text-sm rounded-full bg-light-100 dark:bg-dark-100 border-light-300 dark:border-dark-300"
+                />
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dark-400 dark:text-light-400" />
+              </div>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-full bg-dark-100 text-light-100 dark:bg-light-100 dark:text-dark-100 text-xs font-bold hover:opacity-90 transition-opacity shrink-0"
+              >
+                Search
+              </button>
+            </form>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                to="/feed"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-dark-100 text-light-100 dark:bg-light-100 dark:text-dark-100 text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-md inline-flex items-center justify-center gap-1.5"
+              >
+                <ArrowLeft size={14} />
+                <span>Go to Timeline</span>
+              </Link>
+              <Link
+                to="/authors"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-full border border-light-300 dark:border-dark-300 text-xs font-bold hover:bg-light-200 dark:hover:bg-dark-200 transition-colors inline-flex items-center justify-center gap-1.5"
+              >
+                <BookOpen size={14} />
+                <span>Browse Creators Directory</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Suggested Creators to keep user engaged */}
+        <div className="px-4 sm:px-8 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-light-300/50 dark:border-dark-300/50">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-primary-500" />
+              <h3 className="text-base sm:text-lg font-bold font-heading text-dark-100 dark:text-light-100">
+                Popular Creators You May Like
+              </h3>
+            </div>
             <Link
-              to="/explore"
-              className="px-6 py-2.5 rounded-full border border-light-300 dark:border-dark-300 text-xs font-bold hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
+              to="/authors"
+              className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline"
             >
-              Explore Creators
+              View all creators &rarr;
             </Link>
           </div>
+
+          {loadingSuggestions ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="p-4 rounded-xl bg-light-200/50 dark:bg-dark-200/40 border border-light-300/60 dark:border-dark-300/60 animate-pulse space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-light-300 dark:bg-dark-300"></div>
+                    <div className="space-y-1.5 flex-1">
+                      <div className="h-4 w-24 bg-light-300 dark:bg-dark-300 rounded"></div>
+                      <div className="h-3 w-16 bg-light-300 dark:bg-dark-300 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="h-3 w-full bg-light-300 dark:bg-dark-300 rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : suggestedAuthors.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {suggestedAuthors.map((sAuthor) => (
+                <Link
+                  key={sAuthor._id}
+                  to={`/@${sAuthor.username}`}
+                  className="p-4 rounded-xl bg-light-200/40 dark:bg-dark-200/30 hover:bg-light-200/80 dark:hover:bg-dark-200/60 border border-light-300/60 dark:border-dark-300/60 transition-all hover:scale-[1.01] hover:shadow-sm flex flex-col justify-between group"
+                >
+                  <div className="flex items-start gap-3.5 mb-2">
+                    <img
+                      src={sAuthor.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(sAuthor.name || 'Author')}&size=100`}
+                      alt={sAuthor.name}
+                      className="w-12 h-12 rounded-full object-cover border border-light-300 dark:border-dark-300 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-sm text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
+                          {sAuthor.name}
+                        </span>
+                        {(sAuthor.isVerified || sAuthor.role === 'admin' || sAuthor.role === 'author') && (
+                          <img src="/badge.svg" alt="Verified" className="w-3.5 h-3.5 shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-xs text-dark-400 dark:text-light-400 truncate">
+                        @{sAuthor.username}
+                      </p>
+                      {sAuthor.bio && (
+                        <p className="text-xs font-serif text-dark-300 dark:text-light-300 line-clamp-2 mt-1">
+                          {sAuthor.bio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-light-300/40 dark:border-dark-300/40 flex items-center justify-between text-xs text-dark-400 dark:text-light-400">
+                    <span>{sAuthor.storiesCount || 0} stories</span>
+                    <span className="text-primary-600 dark:text-primary-400 font-semibold group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1">
+                      View Profile &rarr;
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -471,7 +660,7 @@ const AuthorProfilePage: React.FC = () => {
   const isCurrentTabLoading = tabLoading && !tabCache[activeTab];
 
   return (
-    <div className="max-w-5xl lg:max-w-6xl mx-auto border-x border-light-200 dark:border-dark-300 min-h-screen bg-light-100/50 dark:bg-dark-100/50 pb-20 w-full min-w-0">
+    <div className="w-full max-w-4xl lg:max-w-5xl mx-auto sm:border-x border-light-300/70 dark:border-dark-300/70 min-h-screen bg-light-100 dark:bg-dark-100 pb-20 min-w-0">
       
       {/* ── X-Style Top Header Bar ── */}
       <div className="sticky top-0 z-40 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-light-200 dark:border-dark-300">

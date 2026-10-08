@@ -19,7 +19,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, userRole }) => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, logoutUser } = useAuth();
+  const { user, isAuthenticated, logoutUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const handleClose = useCallback(() => {
@@ -59,13 +59,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
 
   const menuItems = [
     { name: 'Home', icon: <Home size={20} />, path: '/' },
-    { name: 'Feed', icon: <Flame size={20} />, path: '/feed' },
     { name: 'Explore', icon: <Search size={20} />, path: '/explore' },
-    { name: 'Authors', icon: <Users size={20} />, path: '/authors' },
-    { name: 'Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
-    { name: 'My Stories', icon: <BookOpen size={20} />, path: '/me/stories' },
-    ...(userRole === 'admin' ? [{ name: 'Manage Users', icon: <Users size={20} />, path: '/admin/users' }] : []),
-    ...(userRole === 'admin' || userRole === 'reviewer' ? [{ name: 'Machine Audits', icon: <ShieldAlert size={20} />, path: '/reviews' }] : []),
+    ...(isAuthenticated
+      ? [
+          { name: 'Feed', icon: <Flame size={20} />, path: '/feed' },
+          { name: 'Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
+          { name: 'My Stories', icon: <BookOpen size={20} />, path: '/me/stories' },
+          ...(userRole === 'admin' ? [{ name: 'Authors', icon: <Users size={20} />, path: '/authors' }] : []),
+          ...(userRole === 'admin' || userRole === 'reviewer' ? [{ name: 'Machine Audits', icon: <ShieldAlert size={20} />, path: '/reviews' }] : []),
+        ]
+      : []),
   ];
 
   const DesktopSidebar = (
@@ -83,15 +86,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
             <Logo />
           </div>
           
-          <div className="mb-3 shrink-0">
-            <Link
-              to="/write"
-              className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm py-2.5 px-4 rounded-full shadow-md hover:shadow-lg transition-all active:scale-98"
-            >
-              <Edit3 size={16} />
-              <span>Write</span>
-            </Link>
-          </div>
+          {isAuthenticated && (
+            <div className="mb-3 shrink-0">
+              <Link
+                to="/write"
+                className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm py-2.5 px-4 rounded-full shadow-md hover:shadow-lg transition-all active:scale-98"
+              >
+                <Edit3 size={16} />
+                <span>Write</span>
+              </Link>
+            </div>
+          )}
           
           <nav className="min-h-0">
             <ul className="space-y-0.5">
@@ -118,6 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
         </div>
         
         {/* User Profile Area at Bottom */}
+        {isAuthenticated && (
         <div className="p-3 border-t border-light-300/80 dark:border-dark-300/80 shrink-0 bg-light-100 dark:bg-dark-100">
           <div className="flex items-center justify-between group cursor-pointer p-1.5 rounded-xl hover:bg-light-200 dark:hover:bg-dark-200 transition-colors">
             <Link 
@@ -152,6 +158,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
             </button>
           </div>
         </div>
+        )}
       </aside>
     </>
   );
@@ -190,12 +197,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
             </div>
             
             <div className="p-4 flex-1 flex flex-col">
-              <div className="mb-6 mt-2">
-                <Link onClick={handleClose} to="/write" className="w-full btn btn-primary flex items-center justify-center font-bold py-3 shadow-md hover:shadow-lg transition-all">
-                  <Edit3 size={18} className="mr-2" />
-                  Write
-                </Link>
-              </div>
+              {isAuthenticated && (
+                <div className="mb-6 mt-2">
+                  <Link onClick={handleClose} to="/write" className="w-full btn btn-primary flex items-center justify-center font-bold py-3 shadow-md hover:shadow-lg transition-all">
+                    <Edit3 size={18} className="mr-2" />
+                    Write
+                  </Link>
+                </div>
+              )}
               
               <nav>
                 <ul className="space-y-1">
@@ -223,6 +232,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
             </div>
             
             {/* User Profile Area at Bottom */}
+            {isAuthenticated && (
             <div className="p-4 border-t border-light-300 dark:border-dark-300 shrink-0 bg-light-50 dark:bg-dark-200/50">
               <Link onClick={handleClose} to={`/@${user?.username || 'user'}`} className="flex items-center mb-3 group">
                 <img 
@@ -244,6 +254,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
                 </button>
               </div>
             </div>
+            )}
           </motion.div>
         </>
       )}

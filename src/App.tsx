@@ -215,18 +215,10 @@ function App() {
                   />
                 </Route>
                 
-                {/* Admin Users Route */}
+                {/* Legacy admin users path now redirects to /authors */}
                 <Route
                   path="admin/users"
-                  element={
-                    <ProtectedRoute>
-                      <ErrorBoundary>
-                        <AdminRoute>
-                          <Authors />
-                        </AdminRoute>
-                      </ErrorBoundary>
-                    </ProtectedRoute>
-                  }
+                  element={<Navigate to="/authors" replace />}
                 />
 
                 {/* Reviews Route */}
@@ -265,13 +257,15 @@ function App() {
                 <Route path="categories" element={<Navigate to="/explore" replace />} />
                 <Route path="categories/:category" element={<CategoryRouteRedirect />} />
                 
-                {/* Author Directory & Profile Routes */}
+                {/* Admin User Management (Authors page is admin-only) */}
                 <Route
                   path="authors"
                   element={
-                    <ErrorBoundary>
-                      <Authors />
-                    </ErrorBoundary>
+                    <ProtectedRoute adminOnly>
+                      <ErrorBoundary>
+                        <Authors />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
                   }
                 />
                 <Route path="authors/:identifier" element={<AuthorProfilePage />} />

@@ -28,7 +28,7 @@ const MainLayout: React.FC = () => {
     dispatch(closeSidebarAction());
   }, [location.pathname, location.search, dispatch]);
 
-  const isAuthPage = location.pathname.startsWith('/auth');
+  const isAuthPage = location.pathname === '/auth' || location.pathname.startsWith('/auth/');
   const isProfileSetupPage = location.pathname === '/onboarding/username';
 
   // Strict profile completion guard: If authenticated and profile is not set, no authenticated pages should be accessible
@@ -46,6 +46,7 @@ const MainLayout: React.FC = () => {
     location.pathname.startsWith('/authors') || 
     location.pathname.startsWith('/author') || 
     location.pathname === '/profile';
+  const isAuthorsDirectory = location.pathname === '/authors';
   const isFullPage = isAuthPage || isOnboardingPage || isWritePage;
   const isFullWidthPage = isFullPage || isFeedPage || isExplorePage || isProfilePage;
 
@@ -70,7 +71,7 @@ const MainLayout: React.FC = () => {
       )}
       
       <div className="flex flex-1">
-        {isAuthenticated && !isFullPage && (
+        {(isAuthenticated || isAuthorsDirectory) && !isFullPage && (
           <Sidebar 
             isOpen={sidebarOpen} 
             toggleSidebar={toggleSidebar} 

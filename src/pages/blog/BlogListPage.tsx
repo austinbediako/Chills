@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -98,12 +98,59 @@ const BlogListPage: React.FC = () => {
     total: 0,
   });
 
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ people: AuthorResult[]; topics: TopicResult[] }>({
+    people: [],
+    topics: [],
+  });
+  const searchRef = useRef<HTMLFormElement>(null);
+
   const isSearchActive = Boolean(activeSearchQuery.trim());
 
   const getAuthHeader = useCallback(() => {
     const token = user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');
     return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
   }, [user]);
+
+  // 0. Real-time search suggestions (debounced)
+  useEffect(() => {
+    const trimmed = searchInput.trim();
+    if (!trimmed) {
+      setSuggestionsOpen(false);
+      setSuggestions({ people: [], topics: [] });
+      return;
+    }
+
+    setSuggestionsLoading(true);
+    const timer = setTimeout(() => {
+      Promise.all([
+        axios.get(`/api/submissions/search/explore?q=${encodeURIComponent(trimmed)}&tab=people`, getAuthHeader()),
+        axios.get(`/api/submissions/search/explore?q=${encodeURIComponent(trimmed)}&tab=topics`, getAuthHeader()),
+      ])
+        .then(([peopleRes, topicsRes]) => {
+          setSuggestions({
+            people: peopleRes.data?.people || [],
+            topics: topicsRes.data?.topics || [],
+          });
+        })
+        .catch(() => setSuggestions({ people: [], topics: [] }))
+        .finally(() => setSuggestionsLoading(false));
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, getAuthHeader]);
+
+  // Close suggestions when clicking outside the search form
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSuggestionsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 1. Fetch categories and popular tags
   useEffect(() => {
@@ -217,8 +264,9 @@ const BlogListPage: React.FC = () => {
   }, [activeSearchQuery, searchTab, isSearchActive, getAuthHeader, user?._id]);
 
   // Search form submit
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
+    setSuggestionsOpen(false);
     const trimmed = searchInput.trim();
     const nextParams = new URLSearchParams(searchParams);
 
@@ -237,6 +285,7 @@ const BlogListPage: React.FC = () => {
   };
 
   const handleClearSearch = () => {
+    setSuggestionsOpen(false);
     setSearchInput('');
     setActiveSearchQuery('');
     const nextParams = new URLSearchParams(searchParams);
@@ -244,6 +293,17 @@ const BlogListPage: React.FC = () => {
     nextParams.delete('search');
     nextParams.delete('tab');
     setSearchParams(nextParams);
+  };
+
+  const handleSelectPerson = (username: string) => {
+    setSuggestionsOpen(false);
+    navigate(`/@${username}`);
+  };
+
+  const handleSelectTopic = (topic: TopicResult) => {
+    setSuggestionsOpen(false);
+    const key = topic.type === 'category' ? 'category' : 'tag';
+    navigate(`/explore?${key}=${encodeURIComponent(topic.slug)}`);
   };
 
   const handleSelectCategoryTab = (catName: string) => {
@@ -480,7 +540,7 @@ const BlogListPage: React.FC = () => {
             )}
 
             {/* Pill Search Input */}
-            <form onSubmit={handleSearchSubmit} className="flex-1 relative">
+            <form ref={searchRef} onSubmit={handleSearchSubmit} className="flex-1 relative">
               <div className="relative flex items-center">
                 <Search
                   size={18}
@@ -489,7 +549,12 @@ const BlogListPage: React.FC = () => {
                 <input
                   type="text"
                   value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchInput(value);
+                    if (value.trim()) setSuggestionsOpen(true);
+                  }}
+                  onFocus={() => searchInput.trim() && setSuggestionsOpen(true)}
                   placeholder="Search KBlog..."
                   className="w-full bg-light-200 dark:bg-dark-200 text-dark-100 dark:text-light-100 placeholder-dark-400 dark:placeholder-light-400 text-sm rounded-full pl-10 pr-9 py-2.5 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 focus:bg-light-100 dark:focus:bg-dark-100 transition-all shadow-inner"
                 />
@@ -498,6 +563,7 @@ const BlogListPage: React.FC = () => {
                     type="button"
                     onClick={() => {
                       setSearchInput('');
+                      setSuggestionsOpen(false);
                       if (isSearchActive) handleClearSearch();
                     }}
                     className="absolute right-3 p-1 rounded-full text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 hover:bg-light-300 dark:hover:bg-dark-300 transition-colors"
@@ -506,6 +572,81 @@ const BlogListPage: React.FC = () => {
                   </button>
                 )}
               </div>
+
+              {suggestionsOpen && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-light-100 dark:bg-dark-100 rounded-2xl shadow-2xl border border-light-300 dark:border-dark-300 z-50 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={handleSearchSubmit}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-light-200 dark:hover:bg-dark-200 transition-colors border-b border-light-300 dark:border-dark-300"
+                  >
+                    <Search size={18} className="text-dark-400 dark:text-light-400 shrink-0" />
+                    <span className="text-sm text-dark-100 dark:text-light-100 font-medium">
+                      Search for &quot;{searchInput.trim()}&quot;
+                    </span>
+                  </button>
+
+                  {suggestionsLoading ? (
+                    <div className="p-4 text-center text-xs text-dark-400 dark:text-light-400">Searching...</div>
+                  ) : (
+                    <>
+                      {suggestions.people.length > 0 && (
+                        <div>
+                          <div className="px-4 py-2 text-xs font-bold text-dark-400 dark:text-light-400 uppercase tracking-wider">
+                            People
+                          </div>
+                          {suggestions.people.slice(0, 6).map((person) => (
+                            <button
+                              key={person._id}
+                              type="button"
+                              onClick={() => handleSelectPerson(person.username)}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
+                            >
+                              <img
+                                src={person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}`}
+                                alt={person.name}
+                                className="h-9 w-9 rounded-full object-cover border border-light-300 dark:border-dark-300 shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold text-dark-100 dark:text-light-100 truncate">{person.name}</p>
+                                <p className="text-xs text-dark-400 dark:text-light-400 truncate">@{person.username}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {suggestions.topics.length > 0 && (
+                        <div className="border-t border-light-300 dark:border-dark-300">
+                          <div className="px-4 py-2 text-xs font-bold text-dark-400 dark:text-light-400 uppercase tracking-wider">
+                            Topics
+                          </div>
+                          {suggestions.topics.slice(0, 6).map((topic) => (
+                            <button
+                              key={`${topic.type}-${topic.slug}`}
+                              type="button"
+                              onClick={() => handleSelectTopic(topic)}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
+                            >
+                              <Search size={18} className="text-dark-400 dark:text-light-400 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold text-dark-100 dark:text-light-100 truncate">
+                                  {topic.type === 'category' ? '' : '#'}{topic.name}
+                                </p>
+                                {topic.count !== null && (
+                                  <p className="text-xs text-dark-400 dark:text-light-400">
+                                    {topic.count} {topic.count === 1 ? 'story' : 'stories'}
+                                  </p>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </form>
 
             <button

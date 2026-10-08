@@ -36,6 +36,8 @@ const interactionSchema = new mongoose.Schema(
 interactionSchema.index({ submission: 1, user: 1, type: 1 }, { unique: true });
 interactionSchema.index({ user: 1, type: 1, folder: 1 });
 interactionSchema.index({ user: 1, type: 1 });
+interactionSchema.index({ user: 1, type: 1, createdAt: -1 });
+interactionSchema.index({ submission: 1, type: 1, createdAt: -1 });
 
 const Interaction = mongoose.model('Interaction', interactionSchema);
 

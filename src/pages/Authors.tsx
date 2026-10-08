@@ -14,11 +14,12 @@ import {
   Filter,
   Ban,
   Check,
+  Menu,
 } from 'lucide-react';
 import useAuthors, { AuthorUser } from '../hooks/useAuthors';
 import { useAuth } from '../hooks/useAuth';
 import { useDispatch } from 'react-redux';
-import { showNotification } from '../redux/slices/uiSlice';
+import { showNotification, toggleSidebar } from '../redux/slices/uiSlice';
 
 const Authors: React.FC = () => {
   const { authors, loading, error, refetch, updateUserRole, toggleUserStatus } = useAuthors();
@@ -112,6 +113,13 @@ const Authors: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => dispatch(toggleSidebar())}
+              className="lg:hidden p-2 -ml-1 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 text-dark-400 dark:text-light-300 transition-colors shrink-0"
+              aria-label="Open navigation menu"
+            >
+              <Menu size={20} />
+            </button>
             <div className="p-2.5 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
               <Users size={24} />
             </div>

@@ -185,7 +185,7 @@ const BlogDetailPage: React.FC = () => {
           Error Loading Document
         </h2>
         <p className="text-dark-300 dark:text-light-300 mb-6">{error}</p>
-        <Link to="/blog" className="btn btn-primary">Back to Repository</Link>
+        <Link to="/explore" className="btn btn-primary">Back to Explore</Link>
       </div>
     );
   }
@@ -199,7 +199,7 @@ const BlogDetailPage: React.FC = () => {
         <p className="text-dark-300 dark:text-light-300 mb-6">
           The document you're looking for doesn't exist or has been removed.
         </p>
-        <Link to="/blog" className="btn btn-primary">Back to Repository</Link>
+        <Link to="/explore" className="btn btn-primary">Back to Explore</Link>
       </div>
     );
   }
@@ -210,7 +210,7 @@ const BlogDetailPage: React.FC = () => {
       <div className="mb-6 flex items-center text-sm text-dark-400 dark:text-light-400">
         <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400">Home</Link>
         <span className="mx-2">/</span>
-        <Link to="/explore" className="hover:text-primary-600 dark:hover:text-primary-400">Repository</Link>
+        <Link to="/explore" className="hover:text-primary-600 dark:hover:text-primary-400">Explore</Link>
         <span className="mx-2">/</span>
         <Link 
           to={`/explore?category=${encodeURIComponent(submission.category?.name || '')}`} 
@@ -540,14 +540,14 @@ const BlogDetailPage: React.FC = () => {
       {/* Post Navigation */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Link
-          to="/blog"
+          to="/explore"
           className="group flex items-center rounded-lg border border-light-300 p-4 transition-colors hover:border-primary-600 dark:border-dark-300 dark:hover:border-primary-400"
         >
           <ChevronLeft size={20} className="mr-2 text-dark-400 group-hover:text-primary-600 dark:text-light-400 dark:group-hover:text-primary-400" />
           <div>
             <span className="block text-sm text-dark-400 dark:text-light-400">Back to</span>
             <span className="font-medium text-dark-100 group-hover:text-primary-600 dark:text-light-100 dark:group-hover:text-primary-400">
-              Repository
+              Explore
             </span>
           </div>
         </Link>
