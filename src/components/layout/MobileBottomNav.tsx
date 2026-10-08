@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LucideIcon, Home, Compass, PlusCircle, Bookmark, User, LogIn, BookOpen } from 'lucide-react';
+import { LucideIcon, Flame, Compass, PlusCircle, Bookmark, User, LogIn } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 interface MobileBottomNavProps {
@@ -22,12 +22,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ className = ''
 
   const authenticatedLinks: NavItem[] = [
     {
-      to: '/feed',
-      label: 'Feed',
-      icon: Home,
-      isActive: location.pathname === '/feed' || location.pathname === '/',
-    },
-    {
       to: '/explore',
       label: 'Explore',
       icon: Compass,
@@ -37,8 +31,14 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ className = ''
       to: '/write',
       label: 'Write',
       icon: PlusCircle,
-      isSpecial: true,
       isActive: location.pathname.startsWith('/write'),
+    },
+    {
+      to: '/feed',
+      label: 'Feed',
+      icon: Flame,
+      isSpecial: true,
+      isActive: location.pathname === '/feed' || location.pathname === '/',
     },
     {
       to: '/bookmarks',
@@ -60,28 +60,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ className = ''
 
   const publicLinks: NavItem[] = [
     {
-      to: '/',
-      label: 'Home',
-      icon: Home,
-      isActive: location.pathname === '/',
-    },
-    {
-      to: '/feed',
-      label: 'Feed',
-      icon: Compass,
-      isActive: location.pathname.startsWith('/feed'),
-    },
-    {
       to: '/explore',
       label: 'Explore',
       icon: Compass,
       isActive: location.pathname.startsWith('/explore'),
-    },
-    {
-      to: '/about',
-      label: 'About',
-      icon: BookOpen,
-      isActive: location.pathname === '/about',
     },
     {
       to: '/auth/login',
