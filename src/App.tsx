@@ -45,6 +45,14 @@ const MyStoriesPage = lazy(() => import('./pages/MyStoriesPage'));
 const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
 const SocialFeedPage = lazy(() => import('./pages/SocialFeedPage'));
 
+const HandleRouteRedirectOrProfile: React.FC = () => {
+  const { handle } = useParams<{ handle: string }>();
+  if (handle?.startsWith('@')) {
+    return <AuthorProfilePage />;
+  }
+  return <NotFoundPage />;
+};
+
 // Components
 import Notification from './components/common/Notification';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -173,6 +181,10 @@ function App() {
                 {/* Onboarding Routes */}
                 <Route path="onboarding">
                   <Route
+                    index
+                    element={<Navigate to="/onboarding/username" replace />}
+                  />
+                  <Route
                     path="username"
                     element={
                       <ProtectedRoute>
@@ -187,6 +199,10 @@ function App() {
                         <OnboardingPage />
                       </ProtectedRoute>
                     }
+                  />
+                  <Route
+                    path="*"
+                    element={<Navigate to="/onboarding/username" replace />}
                   />
                 </Route>
                 
@@ -243,7 +259,7 @@ function App() {
                 {/* Author Profile Routes (X / Twitter style layout) */}
                 <Route path="authors/:identifier" element={<AuthorProfilePage />} />
                 <Route path="author/:identifier" element={<AuthorProfilePage />} />
-                <Route path="@:username" element={<AuthorProfilePage />} />
+                <Route path=":handle" element={<HandleRouteRedirectOrProfile />} />
 
                 {/* Tags Routes: redirect to /explore?tag=... */}
                 <Route path="tags" element={<Navigate to="/explore" replace />} />

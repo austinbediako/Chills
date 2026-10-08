@@ -1,13 +1,16 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Calendar, Heart, Repeat, MessageSquare, Clock, 
   Settings, Check, UserPlus, UserMinus, ShieldCheck, Sparkles,
-  BookOpen, Bookmark
+  BookOpen, Bookmark, Camera, Pencil
 } from 'lucide-react';
 import axios from 'axios';
+import { useDispatch } from 'react-redux';
 import { useAuth } from '../hooks/useAuth';
+import { showNotification } from '../redux/slices/uiSlice';
+import ImageCropModal, { CropMode } from '../components/common/ImageCropModal';
 
 interface AuthorProfile {
   _id: string;
@@ -73,21 +76,43 @@ interface CommentItem {
 type TabType = 'posts' | 'reposts' | 'comments' | 'likes';
 
 const AuthorProfilePage: React.FC = () => {
-  const { identifier, username } = useParams<{ identifier?: string; username?: string }>();
-  const activeIdentifier = identifier || username || '';
-  const { user, isAuthenticated } = useAuth();
+  const { identifier, username, handle } = useParams<{ identifier?: string; username?: string; handle?: string }>();
+  const activeIdentifier = identifier || username || handle || '';
+  const dispatch = useDispatch();
+  const { user, isAuthenticated, updateUserProfile } = useAuth();
   const navigate = useNavigate();
 
   const [author, setAuthor] = useState<AuthorProfile | null>(null);
   const [loadingAuthor, setLoadingAuthor] = useState(true);
   const [authorNotFound, setAuthorNotFound] = useState(false);
 
+  // File Inputs & Image Crop Modal State for Owner
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [cropModalState, setCropModalState] = useState<{
+    isOpen: boolean;
+    mode: CropMode;
+    imageSrc: string;
+  }>({
+    isOpen: false,
+    mode: 'avatar',
+    imageSrc: '',
+  });
+
+  const isOwner = Boolean(
+    author?.isSelf ||
+      (user?._id && author?._id && String(user._id) === String(author._id)) ||
+      (user?.username && author?.username && user.username.toLowerCase() === author.username.toLowerCase())
+  );
+
   const [activeTab, setActiveTab] = useState<TabType>('posts');
-  const [posts, setPosts] = useState<StoryItem[]>([]);
-  const [reposts, setReposts] = useState<StoryItem[]>([]);
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [likes, setLikes] = useState<StoryItem[]>([]);
-  const [loadingTabContent, setLoadingTabContent] = useState(false);
+  const [tabCache, setTabCache] = useState<{
+    posts?: StoryItem[];
+    reposts?: StoryItem[];
+    comments?: CommentItem[];
+    likes?: StoryItem[];
+  }>({});
+  const [tabLoading, setTabLoading] = useState(false);
 
   const [isFollowingState, setIsFollowingState] = useState(false);
   const [followersCountState, setFollowersCountState] = useState(0);
@@ -121,37 +146,55 @@ const AuthorProfilePage: React.FC = () => {
     fetchAuthorProfile();
   }, [fetchAuthorProfile]);
 
-  // 2. Fetch Tab Content dynamically
+  // Reset tab cache when navigating between different authors
   useEffect(() => {
-    if (!author?._id) return;
+    if (author?._id) {
+      setTabCache({});
+      setActiveTab('posts');
+    }
+  }, [author?._id]);
+
+  // 2. Fetch Tab Content dynamically with persistent cache (switching is instant!)
+  useEffect(() => {
+    if (!author?._id || !author?.username) return;
+
+    // If already loaded in cache, switch instantly with zero reload/glitch
+    if (tabCache[activeTab]) {
+      return;
+    }
 
     let isMounted = true;
     const fetchTabItems = async () => {
       try {
-        setLoadingTabContent(true);
+        setTabLoading(true);
+        let data = [];
         if (activeTab === 'posts') {
           const res = await axios.get(`/api/users/${author.username}/posts`);
-          if (isMounted) setPosts(res.data || []);
+          data = res.data || [];
         } else if (activeTab === 'reposts') {
           const res = await axios.get(`/api/users/${author.username}/reposts`);
-          if (isMounted) setReposts(res.data || []);
+          data = res.data || [];
         } else if (activeTab === 'comments') {
           const res = await axios.get(`/api/users/${author.username}/comments`);
-          if (isMounted) setComments(res.data || []);
+          data = res.data || [];
         } else if (activeTab === 'likes') {
           const res = await axios.get(`/api/users/${author.username}/likes`);
-          if (isMounted) setLikes(res.data || []);
+          data = res.data || [];
+        }
+
+        if (isMounted) {
+          setTabCache((prev) => ({ ...prev, [activeTab]: data }));
         }
       } catch (err) {
         console.error(`Failed to load ${activeTab} for author:`, err);
       } finally {
-        if (isMounted) setLoadingTabContent(false);
+        if (isMounted) setTabLoading(false);
       }
     };
 
     fetchTabItems();
     return () => { isMounted = false; };
-  }, [activeTab, author?._id, author?.username]);
+  }, [activeTab, author?._id, author?.username, tabCache]);
 
   // 3. Handle Follow / Unfollow Toggle
   const handleFollowToggle = async () => {
@@ -179,6 +222,110 @@ const AuthorProfilePage: React.FC = () => {
       setFollowersCountState(previousCount);
     } finally {
       setFollowSubmitting(false);
+    }
+  };
+
+  // 4. Handle Image File Selection for Avatar or Banner
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, mode: CropMode) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      dispatch(
+        showNotification({
+          message: 'Please select a valid image file (PNG, JPG, WebP).',
+          type: 'error',
+        })
+      );
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      dispatch(
+        showNotification({
+          message: 'Image must be smaller than 15MB.',
+          type: 'error',
+        })
+      );
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCropModalState({
+          isOpen: true,
+          mode,
+          imageSrc: reader.result,
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // Reset value so picking the same file again triggers onChange
+    e.target.value = '';
+  };
+
+  // 5. Handle Cropped Image Save & Upload
+  const handleCropSave = async (croppedBlob: Blob, previewUrl: string) => {
+    const mode = cropModalState.mode;
+    const folder = mode === 'avatar' ? 'avatars' : 'covers';
+
+    // 1. Instant optimistic UI update
+    if (mode === 'avatar') {
+      setAuthor((prev) => (prev ? { ...prev, avatar: previewUrl } : null));
+    } else {
+      setAuthor((prev) => (prev ? { ...prev, coverImage: previewUrl } : null));
+    }
+
+    // 2. Upload to server storage
+    const formData = new FormData();
+    formData.append('image', croppedBlob, `${mode}-${Date.now()}.jpg`);
+
+    try {
+      const token =
+        user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');
+      const res = await axios.post(`/api/submissions/upload?folder=${folder}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const uploadedUrl = res.data?.imageUrl;
+      if (!uploadedUrl) throw new Error('No image URL returned from upload server');
+
+      // 3. Update User profile in database & Redux auth state
+      const updatePayload = mode === 'avatar' ? { avatar: uploadedUrl } : { coverImage: uploadedUrl };
+      await updateUserProfile(updatePayload);
+
+      // 4. Update author state with permanent server URL
+      setAuthor((prev) => {
+        if (!prev) return null;
+        return mode === 'avatar'
+          ? { ...prev, avatar: uploadedUrl }
+          : { ...prev, coverImage: uploadedUrl };
+      });
+
+      dispatch(
+        showNotification({
+          message:
+            mode === 'avatar'
+              ? 'Profile photo updated successfully!'
+              : 'Cover banner updated successfully!',
+          type: 'success',
+        })
+      );
+    } catch (err: any) {
+      console.error(`Failed to upload ${mode}:`, err);
+      dispatch(
+        showNotification({
+          message: err.response?.data?.message || `Failed to update ${mode}. Please try again.`,
+          type: 'error',
+        })
+      );
+      // Revert optimistic update by refetching author profile
+      fetchAuthorProfile();
     }
   };
 
@@ -261,11 +408,18 @@ const AuthorProfilePage: React.FC = () => {
     );
   }
 
+  // Tab accessor variables reading from memory cache
+  const posts = tabCache.posts || [];
+  const reposts = tabCache.reposts || [];
+  const comments = tabCache.comments || [];
+  const likes = tabCache.likes || [];
+  const isCurrentTabLoading = tabLoading && !tabCache[activeTab];
+
   return (
-    <div className="max-w-5xl lg:max-w-6xl mx-auto border-x border-light-200 dark:border-dark-300 min-h-screen bg-light-100/50 dark:bg-dark-100/50 pb-20">
+    <div className="max-w-5xl lg:max-w-6xl mx-auto border-x border-light-200 dark:border-dark-300 min-h-screen bg-light-100/50 dark:bg-dark-100/50 pb-20 w-full min-w-0">
       
       {/* ── X-Style Top Header Bar ── */}
-      <div className="sticky top-0 z-40 bg-light-100/80 dark:bg-dark-100/80 backdrop-blur-md px-4 py-2 flex items-center gap-6 border-b border-light-200 dark:border-dark-300">
+      <div className="sticky top-20 z-40 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md px-4 py-2 flex items-center gap-6 border-b border-light-200 dark:border-dark-300">
         <button
           onClick={() => navigate(-1)}
           className="p-2 rounded-full hover:bg-light-200 dark:hover:bg-dark-200 transition-colors text-dark-300 dark:text-light-300"
@@ -288,16 +442,50 @@ const AuthorProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Cover Banner (like X) ── */}
-      <div className="relative h-44 sm:h-56 w-full bg-gradient-to-r from-primary-600 via-secondary-600 to-indigo-700 overflow-hidden">
+      {/* ── Cover Banner (Proper Wide Banner Format) ── */}
+      <div
+        onClick={() => {
+          if (isOwner) bannerInputRef.current?.click();
+        }}
+        className={`relative w-full aspect-[3/1] min-h-[190px] sm:min-h-[240px] md:min-h-[280px] max-h-[340px] bg-gradient-to-r from-primary-600 via-secondary-600 to-indigo-700 overflow-hidden ${
+          isOwner ? 'cursor-pointer group' : ''
+        }`}
+        title={isOwner ? 'Click to change cover banner' : undefined}
+      >
         {author.coverImage ? (
           <img
             src={author.coverImage}
-            alt="Cover"
-            className="w-full h-full object-cover"
+            alt="Cover Banner"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
           />
         ) : (
           <div className="w-full h-full opacity-30 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        )}
+
+        {/* Owner Controls on Cover Banner */}
+        {isOwner && (
+          <>
+            {/* Subtle Hover Overlay */}
+            <div className="absolute inset-0 bg-dark-900/0 group-hover:bg-dark-900/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+              <span className="px-4 py-2 rounded-full bg-dark-900/80 text-white text-xs font-semibold backdrop-blur-md flex items-center gap-2 shadow-lg border border-white/10">
+                <Camera size={14} /> Click to change cover banner
+              </span>
+            </div>
+
+            {/* Pencil/Edit Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                bannerInputRef.current?.click();
+              }}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-dark-900/75 hover:bg-dark-900 text-white backdrop-blur-md text-xs font-bold flex items-center gap-1.5 border border-white/20 shadow-lg transition-all hover:scale-105 active:scale-95"
+              title="Edit cover banner"
+            >
+              <Pencil size={13} className="text-primary-400" />
+              <span>Edit Cover</span>
+            </button>
+          </>
         )}
       </div>
 
@@ -306,13 +494,42 @@ const AuthorProfilePage: React.FC = () => {
         
         {/* Avatar and Action Button Row */}
         <div className="flex justify-between items-end -mt-16 sm:-mt-20 mb-4">
-          {/* Avatar with Ring */}
-          <div className="relative">
+          {/* Avatar with Ring & Owner Edit Controls */}
+          <div
+            onClick={() => {
+              if (isOwner) avatarInputRef.current?.click();
+            }}
+            className={`relative ${isOwner ? 'cursor-pointer group' : ''}`}
+            title={isOwner ? 'Click to change profile photo' : undefined}
+          >
             <img
               src={author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&size=150`}
               alt={author.name}
               className="h-28 w-28 sm:h-36 sm:w-36 rounded-full object-cover border-4 border-light-100 dark:border-dark-100 bg-light-200 dark:bg-dark-200 shadow-xl"
             />
+
+            {/* Owner Hover Overlay for Avatar */}
+            {isOwner && (
+              <>
+                <div className="absolute inset-0 rounded-full bg-dark-900/0 group-hover:bg-dark-900/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                  <Camera size={22} className="text-white drop-shadow-md" />
+                </div>
+
+                {/* Edit Pencil Icon Badge */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    avatarInputRef.current?.click();
+                  }}
+                  className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 p-2 rounded-full bg-dark-900 hover:bg-primary-600 text-white shadow-lg border-2 border-light-100 dark:border-dark-100 transition-all hover:scale-110 active:scale-95"
+                  title="Change profile photo"
+                  aria-label="Change profile photo"
+                >
+                  <Pencil size={13} />
+                </button>
+              </>
+            )}
           </div>
 
           {/* Action Button: Edit or Follow */}
@@ -414,7 +631,7 @@ const AuthorProfilePage: React.FC = () => {
       </div>
 
       {/* ── Tabs Navigation Bar (like X) ── */}
-      <div className="flex border-b border-light-200 dark:border-dark-300 sticky top-14 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md">
+      <div className="flex border-b border-light-200 dark:border-dark-300 sticky top-20 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-md">
         {[
           { id: 'posts' as const, label: 'Posts' },
           { id: 'reposts' as const, label: 'Reposts' },
@@ -423,7 +640,11 @@ const AuthorProfilePage: React.FC = () => {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab(tab.id);
+            }}
             className={`flex-1 py-3 text-center text-sm font-semibold transition-colors relative hover:bg-light-200/40 dark:hover:bg-dark-200/40 ${
               activeTab === tab.id
                 ? 'text-dark-100 dark:text-light-100'
@@ -443,11 +664,11 @@ const AuthorProfilePage: React.FC = () => {
       </div>
 
       {/* ── Tab Content Feed ── */}
-      <div className="divide-y divide-light-200 dark:divide-dark-300">
-        {loadingTabContent ? (
-          <div className="p-8 space-y-4">
+      <div className="divide-y divide-light-200 dark:divide-dark-300 min-h-[500px] w-full min-w-0">
+        {isCurrentTabLoading ? (
+          <div className="p-6 space-y-4">
             {[1, 2, 3].map((n) => (
-              <div key={n} className="h-32 bg-light-200 dark:bg-dark-200 rounded-xl animate-pulse"></div>
+              <div key={n} className="h-28 bg-light-200/60 dark:bg-dark-200/60 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : (
@@ -463,14 +684,14 @@ const AuthorProfilePage: React.FC = () => {
                 posts.map((post) => (
                   <article 
                     key={post._id}
-                    className="p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/30 transition-colors flex flex-col sm:flex-row gap-4"
+                    className="p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/30 transition-colors flex flex-col sm:flex-row gap-4 w-full min-w-0"
                   >
                     {post.image && (
                       <div className="h-36 sm:h-28 w-full sm:w-44 rounded-xl overflow-hidden shrink-0">
                         <img src={post.image} alt={post.title} className="h-full w-full object-cover" />
                       </div>
                     )}
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center gap-2">
                         {post.category && (
                           <Link 
@@ -499,9 +720,13 @@ const AuthorProfilePage: React.FC = () => {
                         <span className="flex items-center gap-1">
                           <Heart size={13} /> {post.likes || 0}
                         </span>
-                        <span className="flex items-center gap-1">
+                        <Link
+                          to={`/blog/${post.slug}#comments`}
+                          className="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                          title="Go to comments"
+                        >
                           <MessageSquare size={13} /> {post.comments || 0}
-                        </span>
+                        </Link>
                         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -519,7 +744,7 @@ const AuthorProfilePage: React.FC = () => {
                 </div>
               ) : (
                 reposts.map((post) => (
-                  <div key={post._id} className="p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/30 transition-colors">
+                  <div key={post._id} className="p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/30 transition-colors w-full min-w-0">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2">
                       <Repeat size={13} /> Reposted by @{author.username}
                     </div>
@@ -534,7 +759,7 @@ const AuthorProfilePage: React.FC = () => {
                           <img src={post.image} alt={post.title} className="h-full w-full object-cover" />
                         </div>
                       )}
-                      <div className="flex-1 space-y-1.5">
+                      <div className="flex-1 min-w-0 space-y-1.5">
                         <div className="flex items-center gap-2">
                           <img
                             src={post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'Author')}`}
@@ -569,22 +794,22 @@ const AuthorProfilePage: React.FC = () => {
                 </div>
               ) : (
                 comments.map((comment) => (
-                  <div key={comment._id} className="p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/30 transition-colors space-y-2">
+                  <div key={comment._id} className="p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/30 transition-colors space-y-2 w-full min-w-0 max-w-full overflow-hidden">
                     {comment.submission && (
-                      <div className="text-xs text-dark-400 dark:text-light-400 flex items-center gap-1.5">
-                        <span>Commented on</span>
+                      <div className="text-xs text-dark-400 dark:text-light-400 flex items-center gap-1.5 min-w-0 flex-wrap">
+                        <span className="shrink-0">Commented on</span>
                         <Link 
                           to={`/blog/${comment.submission.slug}`}
-                          className="font-semibold text-primary-600 dark:text-primary-400 hover:underline truncate max-w-sm"
+                          className="font-semibold text-primary-600 dark:text-primary-400 hover:underline truncate max-w-full"
                         >
                           "{comment.submission.title}"
                         </Link>
                       </div>
                     )}
-                    <div className="p-3.5 rounded-xl bg-light-200/70 dark:bg-dark-200/60 border border-light-300/50 dark:border-dark-300/50 text-sm font-serif text-dark-100 dark:text-light-100">
+                    <div className="p-3.5 rounded-xl bg-light-200/70 dark:bg-dark-200/60 border border-light-300/50 dark:border-dark-300/50 text-sm font-serif text-dark-100 dark:text-light-100 break-words whitespace-pre-wrap">
                       {comment.content}
                     </div>
-                    <div className="flex items-center justify-between text-xs text-dark-400 dark:text-light-400">
+                    <div className="flex items-center justify-between text-xs text-dark-400 dark:text-light-400 pt-1">
                       <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
                       <span className="flex items-center gap-1">
                         <Heart size={12} /> {comment.likes || 0}
@@ -604,7 +829,7 @@ const AuthorProfilePage: React.FC = () => {
                 </div>
               ) : (
                 likes.map((post) => (
-                  <div key={post._id} className="p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/30 transition-colors">
+                  <div key={post._id} className="p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/30 transition-colors w-full min-w-0">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-500 mb-2">
                       <Heart size={13} fill="currentColor" /> Liked by @{author.username}
                     </div>
@@ -614,7 +839,7 @@ const AuthorProfilePage: React.FC = () => {
                           <img src={post.image} alt={post.title} className="h-full w-full object-cover" />
                         </div>
                       )}
-                      <div className="flex-1 space-y-1.5">
+                      <div className="flex-1 min-w-0 space-y-1.5">
                         <div className="flex items-center gap-2">
                           <img
                             src={post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'Author')}`}
@@ -643,6 +868,37 @@ const AuthorProfilePage: React.FC = () => {
         )}
       </div>
 
+      {/* Hidden File Inputs for Owner Direct Photo & Banner Editing */}
+      {isOwner && (
+        <>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => handleImageSelect(e, 'avatar')}
+          />
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => handleImageSelect(e, 'banner')}
+          />
+        </>
+      )}
+
+      {/* Interactive Image Crop, Reposition & Preview Modal */}
+      <ImageCropModal
+        isOpen={cropModalState.isOpen}
+        mode={cropModalState.mode}
+        imageSrc={cropModalState.imageSrc}
+        authorName={author.name}
+        authorUsername={author.username}
+        currentAvatar={author.avatar}
+        onClose={() => setCropModalState((prev) => ({ ...prev, isOpen: false }))}
+        onSave={handleCropSave}
+      />
     </div>
   );
 };

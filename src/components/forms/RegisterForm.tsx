@@ -95,7 +95,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   );
 
   if (success) {
-    navigate('/onboarding');
+    navigate('/onboarding/username');
   }
 };
 

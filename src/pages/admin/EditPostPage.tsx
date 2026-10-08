@@ -169,7 +169,7 @@ const EditPostPage: React.FC = () => {
         quill.deleteText(range.index, 'Uploading image...'.length);
         if (data?.imageUrl) {
           quill.insertEmbed(range.index, 'image', data.imageUrl);
-          quill.setSelection(range.index + 1);
+          (quill as any).setSelection(range.index + 1);
         }
       } catch (err) {
         quill.deleteText(range.index, 'Uploading image...'.length);
@@ -177,7 +177,7 @@ const EditPostPage: React.FC = () => {
         reader.onloadend = () => {
           if (typeof reader.result === 'string') {
             quill.insertEmbed(range.index, 'image', reader.result);
-            quill.setSelection(range.index + 1);
+            (quill as any).setSelection(range.index + 1);
           }
         };
         reader.readAsDataURL(file);

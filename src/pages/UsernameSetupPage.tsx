@@ -1,22 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, Loader2, User as UserIcon, X, Check } from 'lucide-react';
+import { Camera, Loader2, User as UserIcon, X, Check, LogOut } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 
 const UsernameSetupPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, updateUserProfile, loading } = useAuth();
+  const { user, updateUserProfile, logoutUser, loading } = useAuth();
   
+  const [name, setName] = useState('');
   const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
   const [avatar, setAvatar] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   
   // Clean up auto-generated username prefix if present to give a clean slate
   useEffect(() => {
+    if (user?.name) {
+      setName(user.name);
+    }
+    if (user?.bio) {
+      setBio(user.bio);
+    }
     if (user?.username && user.username.startsWith('pending-')) {
       setUsername('');
     } else if (user?.username) {
@@ -83,8 +91,16 @@ const UsernameSetupPage: React.FC = () => {
       return;
     }
     
-    // Call the update profile thunk with username and avatar
-    const payload: { username: string; avatar?: string } = { username };
+    // Call the update profile thunk with username, name, bio, and avatar
+    const payload: { username: string; name?: string; bio?: string; avatar?: string } = {
+      username: username.trim(),
+    };
+    if (name.trim()) {
+      payload.name = name.trim();
+    }
+    if (bio.trim()) {
+      payload.bio = bio.trim();
+    }
     if (avatar) {
       payload.avatar = avatar;
     }
@@ -93,10 +109,11 @@ const UsernameSetupPage: React.FC = () => {
     
     if (success) {
       // Proceed to optional personalization or the original destination
-      const from = (location.state as any)?.from?.pathname || '/onboarding/interests';
-      navigate(from, { replace: true });
+      const from = (location.state as any)?.from?.pathname;
+      const destination = from && from !== '/onboarding/username' ? from : '/onboarding/interests';
+      navigate(destination, { replace: true });
     } else {
-      setError('Username may already be taken or invalid.');
+      setError('Username may already be taken or invalid. Please choose another.');
     }
   };
 
@@ -111,7 +128,7 @@ const UsernameSetupPage: React.FC = () => {
     <div className="min-h-screen bg-light-100 dark:bg-dark-100 flex flex-col relative overflow-hidden text-dark-100 dark:text-light-100 font-serif items-center justify-center p-4">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-light-100/80 dark:to-dark-100/80 z-0 pointer-events-none"></div>
 
-      <div className="relative z-10 w-full max-w-lg">
+      <div className="relative z-10 w-full max-w-lg my-8">
         <motion.div
           initial="initial" 
           animate="in" 
@@ -125,7 +142,7 @@ const UsernameSetupPage: React.FC = () => {
               Set up your profile
             </h1>
             <p className="text-base text-dark-400 dark:text-light-400">
-              Add a picture and choose your username to get started.
+              Complete your profile details to start reading and publishing on KBlog.
             </p>
           </div>
 
@@ -191,10 +208,25 @@ const UsernameSetupPage: React.FC = () => {
               </label>
             </div>
 
+            {/* ── Full Name Input ── */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-dark-400 dark:text-light-400 mb-2">
+                Display Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="input py-3 text-base w-full font-medium"
+                placeholder="Your full name"
+                maxLength={50}
+              />
+            </div>
+
             {/* ── Username Input ── */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-dark-400 dark:text-light-400 mb-2">
-                Username
+                Username <span className="text-red-500">*</span>
               </label>
               <div className="relative flex items-center">
                 <span className="absolute left-4 text-dark-400 font-medium text-lg">@</span>
@@ -210,15 +242,30 @@ const UsernameSetupPage: React.FC = () => {
               </div>
               {error && <p className="mt-2 text-red-500 text-xs font-medium">{error}</p>}
               <p className="mt-2 text-xs text-dark-400 dark:text-light-400">
-                Letters, numbers, and underscores only (min 3 chars).
+                Letters, numbers, and underscores only (min 3 chars). This will be your permanent handle.
               </p>
+            </div>
+
+            {/* ── Short Bio Input ── */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-dark-400 dark:text-light-400 mb-2">
+                Bio <span className="text-dark-400 dark:text-light-400 text-[11px] font-normal">(Optional)</span>
+              </label>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="input py-2.5 px-3.5 text-sm w-full font-normal resize-none"
+                placeholder="Tell readers a bit about yourself..."
+                rows={2}
+                maxLength={160}
+              />
             </div>
 
             {/* Submit Button */}
             <button 
               type="submit" 
               disabled={loading || isUploading || username.length < 3}
-              className="w-full rounded-full bg-dark-100 dark:bg-light-100 text-light-100 dark:text-dark-100 py-3.5 font-medium text-base hover:scale-[1.02] transition-transform duration-300 shadow-xl disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+              className="w-full rounded-full bg-dark-100 dark:bg-light-100 text-light-100 dark:text-dark-100 py-3.5 font-medium text-base hover:scale-[1.02] transition-transform duration-300 shadow-xl disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -226,9 +273,21 @@ const UsernameSetupPage: React.FC = () => {
                   <span>Saving profile...</span>
                 </>
               ) : (
-                <span>Continue</span>
+                <span>Complete Profile & Continue</span>
               )}
             </button>
+
+            {/* Sign out fallback */}
+            <div className="pt-3 text-center border-t border-light-300/80 dark:border-dark-300/80">
+              <button
+                type="button"
+                onClick={logoutUser}
+                className="text-xs text-dark-400 dark:text-light-400 hover:text-red-500 transition-colors inline-flex items-center gap-1.5"
+              >
+                <LogOut size={13} />
+                <span>Signed in as {user?.email || 'user'} · Sign out</span>
+              </button>
+            </div>
           </form>
         </motion.div>
       </div>

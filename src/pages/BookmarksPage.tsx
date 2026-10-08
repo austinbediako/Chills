@@ -167,7 +167,7 @@ export const BookmarksPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-light-100 dark:bg-dark-100 text-dark-100 dark:text-light-100 pt-24 pb-20">
+    <div className="min-h-screen bg-light-100 dark:bg-dark-100 text-dark-100 dark:text-light-100 pt-4 pb-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ── Page Header ── */}

@@ -354,10 +354,14 @@ const AuthenticatedHomePage: React.FC = () => {
                       Read More <ChevronRight size={16} className="ml-1" />
                     </Link>
                     <div className="flex items-center space-x-3 text-dark-400 dark:text-light-400">
-                      <span className="flex items-center text-xs">
+                      <Link
+                        to={`/blog/${post.slug}#comments`}
+                        className="flex items-center text-xs hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                        title="Go to comments"
+                      >
                         <MessageSquare size={13} className="mr-1" />
                         {post.comments || 0}
-                      </span>
+                      </Link>
                       <span className="flex items-center text-xs">
                         <Heart size={13} className="mr-1" />
                         {post.likes || 0}
@@ -499,10 +503,14 @@ const AuthenticatedHomePage: React.FC = () => {
                         <span>{post.readTime || '5 min read'}</span>
                       </div>
                       <div className="flex items-center space-x-3 text-xs text-dark-400 dark:text-light-400">
-                        <span className="flex items-center">
+                        <Link
+                          to={`/blog/${post.slug}#comments`}
+                          className="flex items-center hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                          title="Go to comments"
+                        >
                           <MessageSquare size={12} className="mr-1" />
                           {post.comments || 0}
-                        </span>
+                        </Link>
                         <span className="flex items-center">
                           <Heart size={12} className="mr-1" />
                           {post.likes || 0}

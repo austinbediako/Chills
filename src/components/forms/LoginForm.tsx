@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginUser, loading } = useAuth();
+  const { loginUser, loading, error: authError } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -14,6 +14,7 @@ const LoginForm: React.FC = () => {
   });
   
   const [showPassword, setShowPassword] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [errors, setErrors] = useState({
     email: '',
     password: '',
@@ -25,6 +26,10 @@ const LoginForm: React.FC = () => {
       ...formData,
       [name]: value,
     });
+    
+    if (serverError) {
+      setServerError(null);
+    }
     
     // Clear error when user types
     if (errors[name as keyof typeof errors]) {
@@ -65,12 +70,20 @@ const LoginForm: React.FC = () => {
       return;
     }
     
+    setServerError(null);
     const success = await loginUser(formData.email, formData.password);
     
     if (success) {
+      const storedUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
+      if (storedUser?.username && storedUser.username.startsWith('pending-')) {
+        navigate('/onboarding/username');
+        return;
+      }
       // Redirect to the page the user was trying to access, or to home
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
       navigate(from);
+    } else {
+      setServerError(authError || 'Invalid email or password. Please check your credentials and try again.');
     }
   };
 
@@ -78,8 +91,20 @@ const LoginForm: React.FC = () => {
     setShowPassword(!showPassword);
   };
 
+  const activeError = serverError || authError;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Prominent Error Alert */}
+      {activeError && (
+        <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-400 text-sm flex items-start gap-3 shadow-sm animate-shake">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
+          <div className="flex-1">
+            <p className="font-bold text-xs uppercase tracking-wider text-red-800 dark:text-red-300">Sign In Failed</p>
+            <p className="text-sm mt-0.5 leading-snug">{activeError}</p>
+          </div>
+        </div>
+      )}
       {/* Email field */}
       <div>
         <label htmlFor="email" className="mb-1 block text-sm font-medium text-dark-100 dark:text-light-100">

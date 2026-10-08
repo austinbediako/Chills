@@ -29,6 +29,15 @@ export interface Submission {
   tags: string[];
   likesCount?: number;
   bookmarksCount?: number;
+  repostsCount?: number;
+  commentsCount?: number;
+  likes?: any[];
+  reposts?: any[];
+  comments?: any[];
+  isLiked?: boolean;
+  isReposted?: boolean;
+  isBookmarked?: boolean;
+  draftRef?: any;
   readTime: string;
   status: 'DRAFT' | 'PENDING_REVIEW' | 'REVISIONS_REQUESTED' | 'APPROVED' | 'PUBLISHED' | 'ARCHIVED';
   createdAt: string;

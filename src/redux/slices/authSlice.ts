@@ -134,7 +134,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as string) || action.error?.message || 'Invalid email or password';
       })
       .addCase(register.pending, (state) => {
         state.loading = true;

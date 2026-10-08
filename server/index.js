@@ -42,6 +42,7 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api/auth', authRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/authors', (req, res) => res.redirect(307, '/api/users/authors'));
 app.use('/api/categories', categoryRoutes);
 app.use('/api/comments', commentRoutes);
 

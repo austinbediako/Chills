@@ -115,6 +115,7 @@ export const useSubmissions = () => {
     editSubmission,
     reviewSubmission,
     removeSubmission,
+    deleteSubmission: removeSubmission,
     interactSubmission,
   };
 };

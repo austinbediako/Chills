@@ -602,9 +602,9 @@ export const SocialFeedPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-light-100 dark:bg-dark-100 text-dark-100 dark:text-light-100 pt-20 pb-16">
-      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="min-h-screen bg-light-100 dark:bg-dark-100 text-dark-100 dark:text-light-100 pb-16">
+      <div className="w-full px-2 sm:px-4 lg:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* ══════════════════════════════════════════════════════════════
               CENTER COLUMN: X-STYLE TIMELINE STREAM (8 Cols)
@@ -612,7 +612,7 @@ export const SocialFeedPage: React.FC = () => {
           <main className="lg:col-span-8 border-x border-light-300/60 dark:border-dark-300/60 min-h-screen bg-light-100 dark:bg-dark-100 rounded-none sm:rounded-2xl overflow-hidden shadow-sm">
             
             {/* ── Sticky Top Bar & Timeline Tabs ── */}
-            <div className="sticky top-16 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-xl border-b border-light-300/60 dark:border-dark-300/60">
+            <div className="sticky top-20 z-30 bg-light-100/90 dark:bg-dark-100/90 backdrop-blur-xl border-b border-light-300/60 dark:border-dark-300/60">
               <div className="px-5 py-3.5 flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -879,16 +879,14 @@ export const SocialFeedPage: React.FC = () => {
                           {/* ── Engagement Action Bar (Engaging X-Style) ── */}
                           <div className="flex items-center justify-between text-dark-400 dark:text-light-400 max-w-md pt-2 border-t border-light-200/70 dark:border-dark-200/70">
                             {/* Comment / Reply button */}
-                            <button
-                              onClick={() => handleToggleCommentsSection(s._id)}
-                              className={`flex items-center gap-1.5 text-xs font-semibold hover:text-sky-500 transition-colors group p-1.5 rounded-full hover:bg-sky-50 dark:hover:bg-sky-950/30 ${
-                                isCommentsOpen ? 'text-sky-500' : ''
-                              }`}
-                              title="Replies and comments"
+                            <Link
+                              to={`/blog/${s.slug}#comments`}
+                              className="flex items-center gap-1.5 text-xs font-semibold hover:text-sky-500 transition-colors group p-1.5 rounded-full hover:bg-sky-50 dark:hover:bg-sky-950/30"
+                              title="Go straight to comments"
                             >
                               <MessageCircle size={16} className="group-hover:scale-110 transition-transform" />
                               <span>{item.commentsCount}</span>
-                            </button>
+                            </Link>
 
                             {/* Repost button */}
                             <button
@@ -1201,116 +1199,119 @@ export const SocialFeedPage: React.FC = () => {
           {/* ══════════════════════════════════════════════════════════════
               RIGHT COLUMN: SIDEBAR WIDGETS (X-STYLE 4 COLS)
           ══════════════════════════════════════════════════════════════ */}
-          <aside className="hidden lg:block lg:col-span-4 space-y-6">
-            
-            {/* Search Box */}
-            <div className="p-4 rounded-2xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300/60 dark:border-dark-300/60 shadow-sm">
-              <div className="relative">
-                <Search size={16} className="absolute left-3.5 top-3 text-dark-400 dark:text-light-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && searchQuery.trim()) {
-                      navigate(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
-                    }
-                  }}
-                  placeholder="Search articles & authors..."
-                  className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full bg-light-100 dark:bg-dark-100 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
+          <aside className="hidden lg:block lg:col-span-4">
+            <div className="sticky top-24 space-y-5 max-h-[calc(100vh-7rem)] overflow-y-auto no-scrollbar pb-6">
+              
+              {/* Search Box */}
+              <div className="p-4 rounded-2xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300/60 dark:border-dark-300/60 shadow-sm">
+                <div className="relative">
+                  <Search size={16} className="absolute left-3.5 top-3 text-dark-400 dark:text-light-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchQuery.trim()) {
+                        navigate(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
+                      }
+                    }}
+                    placeholder="Search articles & authors..."
+                    className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full bg-light-100 dark:bg-dark-100 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Who to follow */}
-            <div className="p-5 rounded-2xl bg-light-200/40 dark:bg-dark-200/40 border border-light-300/60 dark:border-dark-300/60 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-heading font-extrabold text-sm tracking-tight flex items-center gap-2">
-                  <UserPlus size={16} className="text-primary-500" />
-                  <span>Who to follow</span>
-                </h3>
-              </div>
-              <div className="space-y-4">
-                {featuredAuthors.map((author) => {
-                  const isFollowing = followingAuthorIds.has(author._id);
-                  return (
-                    <div key={author._id} className="flex items-center justify-between gap-3">
-                      <Link to={`/@${author.username}`} className="flex items-center gap-2.5 min-w-0 group">
-                        <img
-                          src={author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}`}
-                          alt={author.name}
-                          className="h-10 w-10 rounded-full object-cover border border-light-300 dark:border-dark-300 shrink-0 group-hover:opacity-90"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-dark-100 dark:text-light-100 truncate group-hover:underline">
-                            {author.name}
-                          </p>
-                          <p className="text-[11px] text-dark-400 dark:text-light-400 truncate">
-                            @{author.username}
-                          </p>
-                        </div>
-                      </Link>
+              {/* Who to follow */}
+              <div className="p-5 rounded-2xl bg-light-200/40 dark:bg-dark-200/40 border border-light-300/60 dark:border-dark-300/60 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-heading font-extrabold text-sm tracking-tight flex items-center gap-2">
+                    <UserPlus size={16} className="text-primary-500" />
+                    <span>Who to follow</span>
+                  </h3>
+                </div>
+                <div className="space-y-4">
+                  {featuredAuthors.map((author) => {
+                    const isFollowing = followingAuthorIds.has(author._id);
+                    return (
+                      <div key={author._id} className="flex items-center justify-between gap-3">
+                        <Link to={`/@${author.username}`} className="flex items-center gap-2.5 min-w-0 group">
+                          <img
+                            src={author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}`}
+                            alt={author.name}
+                            className="h-10 w-10 rounded-full object-cover border border-light-300 dark:border-dark-300 shrink-0 group-hover:opacity-90"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-dark-100 dark:text-light-100 truncate group-hover:underline">
+                              {author.name}
+                            </p>
+                            <p className="text-[11px] text-dark-400 dark:text-light-400 truncate">
+                              @{author.username}
+                            </p>
+                          </div>
+                        </Link>
 
-                      {user?._id !== author._id && (
-                        <button
-                          onClick={() => handleToggleFollow(author._id, author.username)}
-                          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-                            isFollowing
-                              ? 'border border-light-300 dark:border-dark-300 text-dark-300 dark:text-light-300 hover:border-red-500 hover:text-red-500'
-                              : 'bg-dark-100 dark:bg-light-100 text-light-100 dark:text-dark-100 hover:scale-105 shadow-sm'
-                          }`}
-                        >
-                          {isFollowing ? 'Following' : 'Follow'}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+                        {user?._id !== author._id && (
+                          <button
+                            onClick={() => handleToggleFollow(author._id, author.username)}
+                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                              isFollowing
+                                ? 'border border-light-300 dark:border-dark-300 text-dark-300 dark:text-light-300 hover:border-red-500 hover:text-red-500'
+                                : 'bg-dark-100 dark:bg-light-100 text-light-100 dark:text-dark-100 hover:scale-105 shadow-sm'
+                            }`}
+                          >
+                            {isFollowing ? 'Following' : 'Follow'}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Trending Topics / Tags */}
-            <div className="p-5 rounded-2xl bg-light-200/40 dark:bg-dark-200/40 border border-light-300/60 dark:border-dark-300/60 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-heading font-extrabold text-sm tracking-tight flex items-center gap-2">
-                  <Flame size={16} className="text-amber-500" />
-                  <span>Trending Topics</span>
-                </h3>
+              {/* Trending Topics / Tags */}
+              <div className="p-5 rounded-2xl bg-light-200/40 dark:bg-dark-200/40 border border-light-300/60 dark:border-dark-300/60 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-heading font-extrabold text-sm tracking-tight flex items-center gap-2">
+                    <Flame size={16} className="text-amber-500" />
+                    <span>Trending Topics</span>
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  {trendingTags.map((tag) => (
+                    <Link
+                      key={tag.name}
+                      to={`/explore?tag=${encodeURIComponent(tag.name)}`}
+                      className="block group p-2 rounded-xl hover:bg-light-200/60 dark:hover:bg-dark-200/60 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                          #{tag.name}
+                        </span>
+                        <span className="text-[11px] text-dark-400 dark:text-light-400">
+                          {tag.count} {tag.count === 1 ? 'story' : 'stories'}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-3">
-                {trendingTags.map((tag) => (
-                  <Link
-                    key={tag.name}
-                    to={`/explore?tag=${encodeURIComponent(tag.name)}`}
-                    className="block group p-2 rounded-xl hover:bg-light-200/60 dark:hover:bg-dark-200/60 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">
-                        #{tag.name}
-                      </span>
-                      <span className="text-[11px] text-dark-400 dark:text-light-400">
-                        {tag.count} {tag.count === 1 ? 'story' : 'stories'}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
 
-            {/* Publishing Promo Card */}
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-              <h4 className="text-base font-extrabold font-heading mb-2">Publish without gatekeepers</h4>
-              <p className="text-xs text-white/80 leading-relaxed mb-4 font-serif">
-                Write long-form articles, get instant machine scoring, build your audience, and join vibrant discussions.
-              </p>
-              <Link
-                to="/write"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-dark-100 text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-md"
-              >
-                <span>Start Writing</span>
-                <ArrowRight size={14} />
-              </Link>
+              {/* Publishing Promo Card */}
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                <h4 className="text-base font-extrabold font-heading mb-2">Publish without gatekeepers</h4>
+                <p className="text-xs text-white/80 leading-relaxed mb-4 font-serif">
+                  Write long-form articles, get instant machine scoring, build your audience, and join vibrant discussions.
+                </p>
+                <Link
+                  to="/write"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-dark-100 text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-md"
+                >
+                  <span>Start Writing</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+
             </div>
           </aside>
 

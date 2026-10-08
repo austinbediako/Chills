@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Home, Compass, Users, MessageSquare, Bookmark, BookOpen, Edit3, Settings, LogOut, ShieldAlert, Sparkles } from 'lucide-react';
+import { X, Home, Search, Users, MessageSquare, Bookmark, BookOpen, Edit3, Settings, LogOut, ShieldAlert, Flame } from 'lucide-react';
 import Logo from '../common/Logo';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -33,8 +33,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, userRole }) =>
 
   const menuItems = [
     { name: 'Home', icon: <Home size={20} />, path: '/' },
-    { name: 'Feed', icon: <Sparkles size={20} />, path: '/feed' },
-    { name: 'Explore', icon: <Compass size={20} />, path: '/explore' },
+    { name: 'Feed', icon: <Flame size={20} />, path: '/feed' },
+    { name: 'Explore', icon: <Search size={20} />, path: '/explore' },
     { name: 'Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
     { name: 'My Stories', icon: <BookOpen size={20} />, path: '/me/stories' },
     ...(userRole === 'admin' ? [{ name: 'Manage Users', icon: <Users size={20} />, path: '/admin/users' }] : []),

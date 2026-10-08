@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, User, Heart, Bookmark, ChevronLeft, CheckCircle, XCircle, Repeat, CornerDownRight } from 'lucide-react';
+import { Calendar, Clock, User, Heart, Bookmark, ChevronLeft, CheckCircle, XCircle, Repeat, CornerDownRight, Edit3 } from 'lucide-react';
 import axios from 'axios';
 import { useSubmissions } from '../../hooks/useSubmissions';
 import { useComments } from '../../hooks/useComments';
@@ -13,6 +13,7 @@ import '../../styles/article.css';
 const BlogDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { submission, loading, error, getSubmissionById, interactSubmission, reviewSubmission } = useSubmissions();
   const { comments, getComments } = useComments();
   const { user, isAuthenticated } = useAuth();
@@ -36,8 +37,35 @@ const BlogDetailPage: React.FC = () => {
       if (submission.repostsCount !== undefined) {
         setRepostsCount(submission.repostsCount);
       }
+      if (submission.isLiked !== undefined) {
+        setIsLiked(Boolean(submission.isLiked));
+      } else if (user?._id && Array.isArray(submission.likes)) {
+        setIsLiked(submission.likes.some((id: any) => String(id) === String(user._id)));
+      }
+      if (submission.isReposted !== undefined) {
+        setIsReposted(Boolean(submission.isReposted));
+      } else if (user?._id && Array.isArray(submission.reposts)) {
+        setIsReposted(submission.reposts.some((id: any) => String(id) === String(user._id)));
+      }
     }
-  }, [submission, getComments]);
+  }, [submission, getComments, user?._id]);
+
+  // Auto-scroll to comments when URL contains #comments or #discussion
+  useEffect(() => {
+    if (location.hash === '#comments' || location.hash === '#discussion') {
+      const timer = setTimeout(() => {
+        const commentsEl = document.getElementById('comments');
+        if (commentsEl) {
+          commentsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const textarea = commentsEl.querySelector('textarea');
+          if (textarea) {
+            textarea.focus();
+          }
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash, submission, loading]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
@@ -260,7 +288,7 @@ const BlogDetailPage: React.FC = () => {
               <CheckCircle size={16} className="mr-2" /> Approve & Publish
             </button>
             <button onClick={() => handleReviewAction('REVISIONS_REQUESTED')} className="btn bg-orange-500 text-white hover:bg-orange-600 flex items-center">
-              <Edit size={16} className="mr-2" /> Request Revisions
+              <Edit3 size={16} className="mr-2" /> Request Revisions
             </button>
             <button onClick={() => handleReviewAction('REJECTED')} className="btn bg-red-600 text-white hover:bg-red-700 flex items-center">
               <XCircle size={16} className="mr-2" /> Reject
@@ -376,8 +404,8 @@ const BlogDetailPage: React.FC = () => {
       </div>
 
       {/* Comments Section */}
-      <div className="mb-12">
-        <h2 className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mb-6">
+      <div id="comments" className="mb-12 scroll-mt-24">
+        <h2 id="discussion" className="text-2xl font-bold font-heading text-dark-100 dark:text-light-100 mb-6">
           Discussion ({comments.length})
         </h2>
         

@@ -73,7 +73,7 @@ export const getSubmissions = asyncHandler(async (req, res) => {
     .skip((parseInt(page) - 1) * parseInt(limit));
   
   const submissionIds = rawSubmissions.map(s => s._id);
-  const [likesAggregation, commentsAggregation] = await Promise.all([
+  const [likesAggregation, commentsAggregation, repostsAggregation, userLikes, userReposts] = await Promise.all([
     Interaction.aggregate([
       { $match: { submission: { $in: submissionIds }, type: 'LIKE' } },
       { $group: { _id: '$submission', count: { $sum: 1 } } }
@@ -81,18 +81,36 @@ export const getSubmissions = asyncHandler(async (req, res) => {
     Comment.aggregate([
       { $match: { submission: { $in: submissionIds }, isFlagged: false } },
       { $group: { _id: '$submission', count: { $sum: 1 } } }
-    ])
+    ]),
+    Interaction.aggregate([
+      { $match: { submission: { $in: submissionIds }, type: 'REPOST' } },
+      { $group: { _id: '$submission', count: { $sum: 1 } } }
+    ]),
+    req.user ? Interaction.find({ submission: { $in: submissionIds }, user: req.user._id, type: 'LIKE' }).select('submission') : [],
+    req.user ? Interaction.find({ submission: { $in: submissionIds }, user: req.user._id, type: 'REPOST' }).select('submission') : [],
   ]);
   
   const likesMap = {};
   likesAggregation.forEach(l => { likesMap[l._id.toString()] = l.count; });
   const commentsMap = {};
   commentsAggregation.forEach(c => { commentsMap[c._id.toString()] = c.count; });
+  const repostsMap = {};
+  repostsAggregation.forEach(r => { repostsMap[r._id.toString()] = r.count; });
+
+  const userLikedSet = new Set(userLikes.map(l => l.submission.toString()));
+  const userRepostedSet = new Set(userReposts.map(r => r.submission.toString()));
   
   const submissions = rawSubmissions.map(s => {
     const doc = s.toObject();
-    doc.likes = likesMap[s._id.toString()] || 0;
-    doc.comments = commentsMap[s._id.toString()] || 0;
+    const idStr = s._id.toString();
+    doc.likes = likesMap[idStr] || 0;
+    doc.likesCount = likesMap[idStr] || 0;
+    doc.comments = commentsMap[idStr] || 0;
+    doc.commentsCount = commentsMap[idStr] || 0;
+    doc.reposts = repostsMap[idStr] || 0;
+    doc.repostsCount = repostsMap[idStr] || 0;
+    doc.isLiked = userLikedSet.has(idStr);
+    doc.isReposted = userRepostedSet.has(idStr);
     return doc;
   });
   
@@ -910,3 +928,345 @@ export const moderateSingleSubmission = asyncHandler(async (req, res) => {
 
   res.json(submission);
 });
+
+// @desc    Intelligent Multi-Dimensional Search Algorithm (Top, Latest, People, Media, Topics)
+// @route   GET /api/submissions/search/explore
+// @access  Public
+export const searchExplore = asyncHandler(async (req, res) => {
+  const { q = '', tab = 'top', page = 1, limit = 25 } = req.query;
+  const rawQ = String(q || '').trim();
+  const cleanQ = rawQ.replace(/^#/, '').replace(/^@/, '').trim();
+  const escapedQ = cleanQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  if (!cleanQ) {
+    return res.json({
+      tab,
+      stories: [],
+      people: [],
+      topics: [],
+      spotlightPeople: [],
+      total: 0,
+    });
+  }
+
+  const currentUserId = req.user?._id?.toString();
+
+  // Helper: Get user engagement map for a set of story IDs
+  const getEngagementMetrics = async (storyIds) => {
+    if (!storyIds || storyIds.length === 0) {
+      return { likes: {}, comments: {}, reposts: {}, userLikes: new Set(), userReposts: new Set() };
+    }
+    const [likesAgg, commentsAgg, repostsAgg, uLikes, uReposts] = await Promise.all([
+      Interaction.aggregate([
+        { $match: { submission: { $in: storyIds }, type: 'LIKE' } },
+        { $group: { _id: '$submission', count: { $sum: 1 } } },
+      ]),
+      Comment.aggregate([
+        { $match: { submission: { $in: storyIds }, isFlagged: false } },
+        { $group: { _id: '$submission', count: { $sum: 1 } } },
+      ]),
+      Interaction.aggregate([
+        { $match: { submission: { $in: storyIds }, type: 'REPOST' } },
+        { $group: { _id: '$submission', count: { $sum: 1 } } },
+      ]),
+      req.user ? Interaction.find({ submission: { $in: storyIds }, user: req.user._id, type: 'LIKE' }).select('submission') : [],
+      req.user ? Interaction.find({ submission: { $in: storyIds }, user: req.user._id, type: 'REPOST' }).select('submission') : [],
+    ]);
+    const likes = {};
+    likesAgg.forEach((l) => {
+      likes[l._id.toString()] = l.count;
+    });
+    const comments = {};
+    commentsAgg.forEach((c) => {
+      comments[c._id.toString()] = c.count;
+    });
+    const reposts = {};
+    repostsAgg.forEach((r) => {
+      reposts[r._id.toString()] = r.count;
+    });
+    const userLikes = new Set(uLikes.map((l) => l.submission.toString()));
+    const userReposts = new Set(uReposts.map((r) => r.submission.toString()));
+    return { likes, comments, reposts, userLikes, userReposts };
+  };
+
+  // 1. PEOPLE SEARCH ALGORITHM
+  const searchPeople = async (maxLimit = 20) => {
+    const peopleMatches = await User.find({
+      $or: [
+        { username: { $regex: escapedQ, $options: 'i' } },
+        { name: { $regex: escapedQ, $options: 'i' } },
+        { bio: { $regex: escapedQ, $options: 'i' } },
+      ],
+    })
+      .select('name username avatar bio role followers following createdAt')
+      .lean();
+
+    const lowerQ = cleanQ.toLowerCase();
+
+    // Score and rank people
+    const scoredPeople = await Promise.all(
+      peopleMatches.map(async (u) => {
+        let personScore = 0;
+        const uName = (u.username || '').toLowerCase();
+        const rName = (u.name || '').toLowerCase();
+        const bio = (u.bio || '').toLowerCase();
+
+        if (uName === lowerQ) personScore += 120;
+        else if (uName.startsWith(lowerQ)) personScore += 70;
+        else if (uName.includes(lowerQ)) personScore += 40;
+
+        if (rName === lowerQ) personScore += 80;
+        else if (rName.startsWith(lowerQ)) personScore += 50;
+        else if (rName.includes(lowerQ)) personScore += 30;
+
+        if (bio.includes(lowerQ)) personScore += 15;
+
+        const followersCount = Array.isArray(u.followers) ? u.followers.length : 0;
+        const followingCount = Array.isArray(u.following) ? u.following.length : 0;
+        personScore += Math.min(followersCount * 5, 100);
+
+        const storiesCount = await Submission.countDocuments({ author: u._id, status: 'PUBLISHED' });
+        personScore += Math.min(storiesCount * 10, 80);
+
+        const isFollowing = currentUserId && Array.isArray(u.followers)
+          ? u.followers.some((f) => f.toString() === currentUserId)
+          : false;
+
+        return {
+          ...u,
+          followersCount,
+          followingCount,
+          storiesCount,
+          isFollowing,
+          personScore,
+        };
+      })
+    );
+
+    return scoredPeople.sort((a, b) => b.personScore - a.personScore).slice(0, maxLimit);
+  };
+
+  // 2. TOPICS SEARCH ALGORITHM
+  const searchTopics = async () => {
+    const [tagsAgg, categoriesMatch] = await Promise.all([
+      Submission.aggregate([
+        { $match: { status: 'PUBLISHED', isDraft: { $ne: true } } },
+        { $unwind: '$tags' },
+        { $match: { tags: { $regex: escapedQ, $options: 'i' } } },
+        { $group: { _id: '$tags', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 15 },
+      ]),
+      Category.find({
+        $or: [
+          { name: { $regex: escapedQ, $options: 'i' } },
+          { slug: { $regex: escapedQ, $options: 'i' } },
+        ],
+      }).lean(),
+    ]);
+
+    const topics = [];
+    categoriesMatch.forEach((c) => {
+      topics.push({
+        name: c.name,
+        slug: c.slug,
+        type: 'category',
+        count: null,
+      });
+    });
+
+    tagsAgg.forEach((t) => {
+      topics.push({
+        name: t._id,
+        slug: t._id,
+        type: 'tag',
+        count: t.count,
+      });
+    });
+
+    return topics;
+  };
+
+  // Base story query for articles
+  const baseStoryQuery = {
+    status: 'PUBLISHED',
+    isDraft: { $ne: true },
+    $or: [
+      { title: { $regex: escapedQ, $options: 'i' } },
+      { abstract: { $regex: escapedQ, $options: 'i' } },
+      { tags: { $regex: escapedQ, $options: 'i' } },
+    ],
+  };
+
+  if (tab === 'people') {
+    const people = await searchPeople(30);
+    return res.json({
+      tab: 'people',
+      stories: [],
+      spotlightPeople: [],
+      people,
+      topics: [],
+      total: people.length,
+    });
+  }
+
+  if (tab === 'topics') {
+    const topics = await searchTopics();
+    const relatedStoriesRaw = await Submission.find(baseStoryQuery)
+      .populate('author', 'name username avatar')
+      .populate('category', 'name slug')
+      .sort({ createdAt: -1 })
+      .limit(12)
+      .lean();
+
+    const storyIds = relatedStoriesRaw.map((s) => s._id);
+    const { likes, comments, reposts } = await getEngagementMetrics(storyIds);
+    const relatedStories = relatedStoriesRaw.map((s) => ({
+      ...s,
+      likesCount: likes[s._id.toString()] || 0,
+      commentsCount: comments[s._id.toString()] || 0,
+      repostsCount: reposts[s._id.toString()] || 0,
+    }));
+
+    return res.json({
+      tab: 'topics',
+      stories: relatedStories,
+      spotlightPeople: [],
+      people: [],
+      topics,
+      total: topics.length,
+    });
+  }
+
+  if (tab === 'media') {
+    const mediaQuery = {
+      ...baseStoryQuery,
+      image: { $exists: true, $ne: '', $regex: /\S+/ },
+    };
+    const mediaStoriesRaw = await Submission.find(mediaQuery)
+      .populate('author', 'name username avatar')
+      .populate('category', 'name slug')
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .lean();
+
+    const storyIds = mediaStoriesRaw.map((s) => s._id);
+    const { likes, comments, reposts } = await getEngagementMetrics(storyIds);
+    const mediaStories = mediaStoriesRaw.map((s) => ({
+      ...s,
+      likesCount: likes[s._id.toString()] || 0,
+      commentsCount: comments[s._id.toString()] || 0,
+      repostsCount: reposts[s._id.toString()] || 0,
+    }));
+
+    return res.json({
+      tab: 'media',
+      stories: mediaStories,
+      spotlightPeople: [],
+      people: [],
+      topics: [],
+      total: mediaStories.length,
+    });
+  }
+
+  if (tab === 'latest') {
+    const latestStoriesRaw = await Submission.find(baseStoryQuery)
+      .populate('author', 'name username avatar')
+      .populate('category', 'name slug')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .lean();
+
+    const storyIds = latestStoriesRaw.map((s) => s._id);
+    const { likes, comments, reposts } = await getEngagementMetrics(storyIds);
+    const latestStories = latestStoriesRaw.map((s) => ({
+      ...s,
+      likesCount: likes[s._id.toString()] || 0,
+      commentsCount: comments[s._id.toString()] || 0,
+      repostsCount: reposts[s._id.toString()] || 0,
+    }));
+
+    return res.json({
+      tab: 'latest',
+      stories: latestStories,
+      spotlightPeople: [],
+      people: [],
+      topics: [],
+      total: latestStories.length,
+    });
+  }
+
+  // DEFAULT / TOP TAB: Intelligent Engagement & Relevance Algorithm
+  const candidateStories = await Submission.find(baseStoryQuery)
+    .populate('author', 'name username avatar')
+    .populate('category', 'name slug')
+    .limit(60)
+    .lean();
+
+  const storyIds = candidateStories.map((s) => s._id);
+  const { likes, comments, reposts } = await getEngagementMetrics(storyIds);
+
+  const lowerQ = cleanQ.toLowerCase();
+  const qWords = lowerQ.split(/\s+/).filter(Boolean);
+
+  // Compute Top Algorithm Score for each story
+  const scoredStories = candidateStories.map((s) => {
+    let relevance = 0;
+    const titleLower = (s.title || '').toLowerCase();
+    const abstractLower = (s.abstract || '').toLowerCase();
+    const tagsArr = Array.isArray(s.tags) ? s.tags.map((t) => t.toLowerCase()) : [];
+
+    // Exact phrase match
+    if (titleLower.includes(lowerQ)) relevance += 60;
+    if (tagsArr.includes(lowerQ)) relevance += 45;
+    if (abstractLower.includes(lowerQ)) relevance += 25;
+
+    // Word-level match
+    qWords.forEach((word) => {
+      if (titleLower.includes(word)) relevance += 20;
+      if (tagsArr.some((t) => t.includes(word))) relevance += 15;
+      if (abstractLower.includes(word)) relevance += 8;
+    });
+
+    const lCount = likes[s._id.toString()] || 0;
+    const cCount = comments[s._id.toString()] || 0;
+    const rCount = reposts[s._id.toString()] || 0;
+
+    // Engagement weights: Reposts (5x), Comments (4x), Likes (3x)
+    const engagementScore = (lCount * 3) + (cCount * 4) + (rCount * 5);
+
+    // Recency multiplier: 168 hours (7 days) half-life decay
+    const ageHours = Math.max(0, (Date.now() - new Date(s.createdAt).getTime()) / (1000 * 60 * 60));
+    const recencyMultiplier = 1 / (1 + (ageHours / 168));
+
+    // Final Top Score
+    const topScore = ((relevance + 5) * 1.5) + (engagementScore * 20 * recencyMultiplier);
+
+    return {
+      ...s,
+      likesCount: lCount,
+      commentsCount: cCount,
+      repostsCount: rCount,
+      topScore,
+      engagementScore,
+    };
+  });
+
+  const topStories = scoredStories
+    .sort((a, b) => b.topScore - a.topScore)
+    .slice(0, parseInt(limit));
+
+  // Spotlight People: Check if query matches authors strongly
+  const spotlightPeople = await searchPeople(2);
+
+  return res.json({
+    tab: 'top',
+    stories: topStories,
+    spotlightPeople: spotlightPeople.filter((p) => p.personScore >= 40),
+    people: [],
+    topics: [],
+    total: topStories.length,
+  });
+});
+

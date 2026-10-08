@@ -39,7 +39,9 @@ export const registerUser = asyncHandler(async (req, res) => {
       username: user.username,
       email: user.email,
       name: user.name,
-      gender: user.gender, // Include gender in the response
+      avatar: user.avatar || '',
+      coverImage: user.coverImage || '',
+      gender: user.gender,
       role: user.role,
       token: generateToken(user._id),
     });
@@ -63,6 +65,8 @@ export const loginUser = asyncHandler(async (req, res) => {
       username: user.username,
       email: user.email,
       name: user.name,
+      avatar: user.avatar || '',
+      coverImage: user.coverImage || '',
       gender: user.gender,
       role: user.role,
       token: generateToken(user._id),

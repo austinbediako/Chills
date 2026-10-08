@@ -12,8 +12,9 @@ export const useAuth = () => {
       await dispatch(login({ email, password })).unwrap();
       dispatch(showNotification({ message: 'Login successful', type: 'success' }));
       return true;
-    } catch (error) {
-      dispatch(showNotification({ message: (error as Error).message, type: 'error' }));
+    } catch (error: any) {
+      const errMsg = typeof error === 'string' ? error : error?.message || 'Invalid email or password';
+      dispatch(showNotification({ message: errMsg, type: 'error' }));
       return false;
     }
   };

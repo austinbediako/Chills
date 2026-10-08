@@ -13,13 +13,17 @@ import {
   rescanAllSubmissions,
   moderateSingleSubmission,
   getSocialFeed,
-  toggleRepostSubmission
+  toggleRepostSubmission,
+  searchExplore,
 } from '../controllers/submissionController.js';
 import { addComment, getComments } from '../controllers/commentController.js';
 import { protect, optionalAuth, isAuthorOrAdmin, isReviewer } from '../middleware/authMiddleware.js';
 import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
+
+// Intelligent Search Algorithm Route (Top, Latest, People, Media, Topics)
+router.get('/search/explore', optionalAuth, searchExplore);
 
 // Get social feed (X / Twitter style merged timeline of stories & reposts)
 router.get('/feed', optionalAuth, getSocialFeed);
