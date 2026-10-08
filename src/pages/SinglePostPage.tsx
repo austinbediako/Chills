@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { isModifierPressed, getModifierKeyLabel } from '../hooks/useKeyboardShortcuts';
 
 // Mock data for blog posts
 const blogPosts = [
@@ -445,13 +446,22 @@ const SinglePostPage: React.FC = () => {
           <div className="mb-4">
             <textarea
               className="input min-h-[120px] w-full"
-              placeholder="Write your comment..."
+              placeholder={`Write your comment... (${getModifierKeyLabel()}+Enter to post)`}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (isModifierPressed(e) && e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCommentSubmit(e);
+                }
+              }}
               required
             ></textarea>
           </div>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-dark-400 dark:text-light-400 font-mono hidden sm:inline">
+              Press {getModifierKeyLabel()}+Enter to submit
+            </span>
             <button type="submit" className="btn btn-primary">
               Post Comment
             </button>

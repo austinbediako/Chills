@@ -67,6 +67,16 @@ const WritePage: React.FC = () => {
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
+
+  // Centralized actions ref for keyboard shortcuts
+  const actionsRef = useRef({
+    publish: () => {},
+    saveDraft: () => {},
+    togglePreview: () => {},
+    toggleShortcuts: () => {},
+    insertLink: () => {},
+  });
 
   // Fetch available categories and popular tags on mount
   useEffect(() => {
@@ -408,6 +418,51 @@ const WritePage: React.FC = () => {
     imageResize: {
       parchment: Parchment,
       modules: ['Resize', 'DisplaySize', 'Toolbar']
+    },
+    keyboard: {
+      bindings: {
+        publishShortcut: {
+          key: 13, // Enter
+          shortKey: true, // Cmd on Mac, Ctrl on Win/Linux
+          handler: () => {
+            actionsRef.current.publish();
+            return false;
+          }
+        },
+        saveDraftShortcut: {
+          key: 'S',
+          shortKey: true,
+          handler: () => {
+            actionsRef.current.saveDraft();
+            return false;
+          }
+        },
+        linkShortcut: {
+          key: 'K',
+          shortKey: true,
+          handler: () => {
+            actionsRef.current.insertLink();
+            return false;
+          }
+        },
+        previewShortcut: {
+          key: 'P',
+          shortKey: true,
+          shiftKey: true,
+          handler: () => {
+            actionsRef.current.togglePreview();
+            return false;
+          }
+        },
+        shortcutsModalShortcut: {
+          key: 191, // '/'
+          shortKey: true,
+          handler: () => {
+            actionsRef.current.toggleShortcuts();
+            return false;
+          }
+        }
+      }
     }
   }), [imageHandler]);
 
@@ -529,6 +584,79 @@ const WritePage: React.FC = () => {
     return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
   };
 
+  // Dedicated Insert Link helper for Quill
+  const handleInsertLink = useCallback(() => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    const range = quill.getSelection(true);
+    if (!range) return;
+    const currentFormat = quill.getFormat(range);
+    const currentLink = typeof currentFormat.link === 'string' ? currentFormat.link : '';
+    const url = window.prompt('Enter link URL (e.g. https://example.com):', currentLink || 'https://');
+    if (url !== null) {
+      if (url.trim() === '' || url.trim() === 'https://') {
+        quill.format('link', false);
+      } else {
+        quill.format('link', url.trim());
+      }
+    }
+  }, []);
+
+  // Explicit draft save trigger for Ctrl/Cmd + S
+  const saveDraftNow = useCallback(async () => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+    lastSavedRef.current.title = '';
+    await performAutoSave();
+  }, [performAutoSave]);
+
+  // Keep actionsRef synced
+  useEffect(() => {
+    actionsRef.current = {
+      publish: handlePublish,
+      saveDraft: saveDraftNow,
+      togglePreview: () => setShowPreview((prev) => !prev),
+      toggleShortcuts: () => setShortcutsModalOpen((prev) => !prev),
+      insertLink: handleInsertLink,
+    };
+  }, [handlePublish, saveDraftNow, handleInsertLink]);
+
+  // Centralized Writing and Navigation Shortcuts for outer components (Title, Abstract, Tags, Document)
+  useWritingShortcuts({
+    onPublish: handlePublish,
+    onSaveDraft: saveDraftNow,
+    onTogglePreview: () => setShowPreview((prev) => !prev),
+    onToggleShortcutsModal: () => setShortcutsModalOpen((prev) => !prev),
+    onBold: () => {
+      const quill = quillRef.current?.getEditor();
+      if (quill) {
+        const format = quill.getFormat();
+        quill.format('bold', !format.bold);
+      }
+    },
+    onItalic: () => {
+      const quill = quillRef.current?.getEditor();
+      if (quill) {
+        const format = quill.getFormat();
+        quill.format('italic', !format.italic);
+      }
+    },
+    onUnderline: () => {
+      const quill = quillRef.current?.getEditor();
+      if (quill) {
+        const format = quill.getFormat();
+        quill.format('underline', !format.underline);
+      }
+    },
+    onLink: handleInsertLink,
+    enabled: true,
+  });
+
+  // ESC key dismisses the preview overlay
+  useEscapeKey(() => setShowPreview(false), showPreview);
+
   if (isLoadingDraft) {
     return (
       <div className="min-h-screen bg-light-100 dark:bg-dark-100 flex flex-col items-center justify-center gap-3">
@@ -588,10 +716,24 @@ const WritePage: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button 
+            type="button"
+            onClick={() => setShortcutsModalOpen(true)}
+            title={`Keyboard Shortcuts (${getModifierKeyLabel()}+/)`}
+            aria-label="Keyboard Shortcuts"
+            className="flex items-center text-sm font-medium text-dark-400 dark:text-light-300 hover:text-dark-100 dark:hover:text-light-100 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-light-200 dark:hover:bg-dark-200"
+          >
+            <Keyboard size={16} className="mr-1.5 text-primary-500" />
+            <span className="hidden sm:inline text-xs font-mono bg-light-300/80 dark:bg-dark-300/80 px-1.5 py-0.5 rounded text-dark-400 dark:text-light-400 border border-light-300 dark:border-dark-300">
+              {getModifierKeyLabel()}+/
+            </span>
+          </button>
+
           <button 
             onClick={() => setShowPreview(true)}
-            className="flex items-center text-sm font-medium text-dark-400 dark:text-light-300 hover:text-dark-100 dark:hover:text-light-100 transition-colors px-3 py-2"
+            title={`Preview story (${getModifierKeyLabel()}+Shift+P)`}
+            className="flex items-center text-sm font-medium text-dark-400 dark:text-light-300 hover:text-dark-100 dark:hover:text-light-100 transition-colors px-3 py-2 rounded-lg hover:bg-light-200 dark:hover:bg-dark-200"
           >
             <Eye size={16} className="mr-1" /> Preview
           </button>
@@ -599,9 +741,13 @@ const WritePage: React.FC = () => {
           <button 
             onClick={handlePublish}
             disabled={loading || isPublishing || !title.trim() || !content.trim()}
-            className="btn btn-primary rounded-full px-5 py-2 text-sm font-bold disabled:opacity-50"
+            title={`Publish story (${getModifierKeyLabel()}+Enter)`}
+            className="btn btn-primary rounded-full px-5 py-2 text-sm font-bold disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
           >
-            {isPublishing ? 'Publishing...' : 'Publish'}
+            <span>{isPublishing ? 'Publishing...' : 'Publish'}</span>
+            <span className="hidden md:inline text-[11px] opacity-75 font-mono tracking-tight">
+              ({getModifierKeyLabel()}+↵)
+            </span>
           </button>
         </div>
       </header>
@@ -780,9 +926,13 @@ const WritePage: React.FC = () => {
             <div className="font-heading font-bold text-xl text-dark-100 dark:text-light-100">Preview</div>
             <button 
               onClick={() => setShowPreview(false)}
-              className="btn btn-outline rounded-full px-5 py-2 text-sm"
+              title="Back to Editor (Esc)"
+              className="btn btn-outline rounded-full px-5 py-2 text-sm flex items-center gap-1.5"
             >
-              Back to Editor
+              <span>Back to Editor</span>
+              <kbd className="hidden sm:inline text-[10px] bg-light-300 dark:bg-dark-300 px-1.5 py-0.5 rounded text-dark-400 dark:text-light-400 font-mono">
+                ESC
+              </kbd>
             </button>
           </div>
           
@@ -835,6 +985,12 @@ const WritePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ── Centralized Keyboard Shortcuts Modal ── */}
+      <KeyboardShortcutsModal
+        isOpen={shortcutsModalOpen}
+        onClose={() => setShortcutsModalOpen(false)}
+      />
 
       {/* Custom Quill Toolbar and Editor Styles */}
       <style>{`

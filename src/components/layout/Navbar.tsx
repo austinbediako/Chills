@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
+import { useEscapeKey } from '../../hooks/useKeyboardShortcuts';
 
 import Logo from '../common/Logo';
 
@@ -172,6 +173,13 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
   );
 
   const [unauthMobileMenuOpen, setUnauthMobileMenuOpen] = useState(false);
+
+  // Global ESC key dismisses search overlay, profile dropdown, and mobile menus
+  useEscapeKey(() => {
+    if (searchOpen) setSearchOpen(false);
+    if (isProfileOpen) setIsProfileOpen(false);
+    if (unauthMobileMenuOpen) setUnauthMobileMenuOpen(false);
+  }, searchOpen || isProfileOpen || unauthMobileMenuOpen);
 
   return (
     <header

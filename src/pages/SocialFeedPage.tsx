@@ -29,6 +29,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useDispatch } from 'react-redux';
 import { showNotification, toggleSidebar } from '../redux/slices/uiSlice';
 import BookmarkDropdown from '../components/common/BookmarkDropdown';
+import { useEscapeKey, isModifierPressed, getModifierKeyLabel } from '../hooks/useKeyboardShortcuts';
 
 interface Author {
   _id: string;
@@ -153,6 +154,9 @@ export const SocialFeedPage: React.FC = () => {
   const [quoteTargetItem, setQuoteTargetItem] = useState<FeedItem | null>(null);
   const [quoteText, setQuoteText] = useState('');
   const [submittingQuote, setSubmittingQuote] = useState(false);
+
+  // Global ESC key dismisses quote modal
+  useEscapeKey(() => setQuoteModalOpen(false), quoteModalOpen);
 
   // Right sidebar data
   const [featuredAuthors, setFeaturedAuthors] = useState<FeaturedAuthor[]>([]);
@@ -1356,7 +1360,13 @@ export const SocialFeedPage: React.FC = () => {
                 <textarea
                   value={quoteText}
                   onChange={(e) => setQuoteText(e.target.value)}
-                  placeholder="Add your own commentary or thoughts (optional)..."
+                  onKeyDown={(e) => {
+                    if (isModifierPressed(e) && e.key === 'Enter') {
+                      e.preventDefault();
+                      handleQuoteRepost();
+                    }
+                  }}
+                  placeholder={`Add your own commentary or thoughts (optional)... (${getModifierKeyLabel()}+Enter to post)`}
                   rows={3}
                   className="w-full p-3.5 text-sm rounded-2xl bg-light-200/50 dark:bg-dark-200/50 border border-light-300 dark:border-dark-300 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none font-serif"
                 />

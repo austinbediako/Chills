@@ -19,6 +19,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useDispatch } from 'react-redux';
 import { showNotification } from '../redux/slices/uiSlice';
 import BookmarkDropdown from '../components/common/BookmarkDropdown';
+import { useEscapeKey } from '../hooks/useKeyboardShortcuts';
 
 interface Author {
   _id: string;
@@ -66,6 +67,9 @@ export const BookmarksPage: React.FC = () => {
   // New folder creation state
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+
+  // Global ESC key dismisses folder modal
+  useEscapeKey(() => setShowNewFolderModal(false), showNewFolderModal);
 
   const getAuthHeader = useCallback(() => {
     const token = user?.token || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).token : '');

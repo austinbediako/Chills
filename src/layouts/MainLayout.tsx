@@ -41,15 +41,19 @@ const MainLayout: React.FC = () => {
   const isWritePage = location.pathname.startsWith('/write');
   const isFeedPage = location.pathname.startsWith('/feed');
   const isExplorePage = location.pathname.startsWith('/explore');
-  const isProfilePage = location.pathname.startsWith('/@') || location.pathname.startsWith('/authors/');
+  const isProfilePage = 
+    location.pathname.startsWith('/@') || 
+    location.pathname.startsWith('/authors') || 
+    location.pathname.startsWith('/author') || 
+    location.pathname === '/profile';
   const isFullPage = isAuthPage || isOnboardingPage || isWritePage;
   const isFullWidthPage = isFullPage || isFeedPage || isExplorePage || isProfilePage;
 
-  // Dedicated app views have custom native sticky headers (Feed timeline, Explore search, Author banner)
+  // Dedicated app views have custom native sticky headers (Feed timeline, Explore search, Author banner, Profile)
   const isAppView = isFeedPage || isExplorePage || isProfilePage || isOnboardingPage || isWritePage;
   
-  // Desktop navbar: shown on public pages and home. Hidden on authenticated views to keep clean sidebar.
-  const showDesktopNavbar = !isAppView && (!isAuthenticated || location.pathname === '/');
+  // Desktop navbar: only shown on public unauthenticated views. When logged in, the fixed desktop sidebar is always used.
+  const showDesktopNavbar = !isAppView && !isAuthenticated;
   // Mobile navbar: shown on all non-appview pages so mobile users can always access menu, theme, and logo
   const showMobileNavbar = !isAppView;
 

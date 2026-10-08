@@ -47,6 +47,9 @@ const SocialFeedPage = lazy(() => import('./pages/SocialFeedPage'));
 
 const HandleRouteRedirectOrProfile: React.FC = () => {
   const { handle } = useParams<{ handle: string }>();
+  if (handle === 'authors') {
+    return <Authors />;
+  }
   if (handle?.startsWith('@')) {
     return <AuthorProfilePage />;
   }
@@ -262,7 +265,15 @@ function App() {
                 <Route path="categories" element={<Navigate to="/explore" replace />} />
                 <Route path="categories/:category" element={<CategoryRouteRedirect />} />
                 
-                {/* Author Profile Routes (X / Twitter style layout) */}
+                {/* Author Directory & Profile Routes */}
+                <Route
+                  path="authors"
+                  element={
+                    <ErrorBoundary>
+                      <Authors />
+                    </ErrorBoundary>
+                  }
+                />
                 <Route path="authors/:identifier" element={<AuthorProfilePage />} />
                 <Route path="author/:identifier" element={<AuthorProfilePage />} />
                 <Route path=":handle" element={<HandleRouteRedirectOrProfile />} />

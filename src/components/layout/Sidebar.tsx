@@ -2,10 +2,12 @@ import React, { useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
-import { X, Home, Search, Users, MessageSquare, Bookmark, BookOpen, Edit3, Settings, LogOut, ShieldAlert, Flame } from 'lucide-react';
+import { X, Home, Search, Users, MessageSquare, Bookmark, BookOpen, Edit3, Settings, LogOut, ShieldAlert, Flame, Sun, Moon } from 'lucide-react';
 import Logo from '../common/Logo';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../context/ThemeContext';
 import { closeSidebar as closeSidebarAction } from '../../redux/slices/uiSlice';
+import { useEscapeKey } from '../../hooks/useKeyboardShortcuts';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
   const location = useLocation();
   const dispatch = useDispatch();
   const { user, logoutUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleClose = useCallback(() => {
     dispatch(closeSidebarAction());
@@ -27,6 +30,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
       toggleSidebar();
     }
   }, [dispatch, closeSidebar, isOpen, toggleSidebar]);
+
+  // Global ESC key dismisses the mobile drawer
+  useEscapeKey(handleClose, isOpen);
 
   // Close sidebar immediately whenever location/route changes
   useEffect(() => {
@@ -55,6 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
     { name: 'Home', icon: <Home size={20} />, path: '/' },
     { name: 'Feed', icon: <Flame size={20} />, path: '/feed' },
     { name: 'Explore', icon: <Search size={20} />, path: '/explore' },
+    { name: 'Authors', icon: <Users size={20} />, path: '/authors' },
     { name: 'Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
     { name: 'My Stories', icon: <BookOpen size={20} />, path: '/me/stories' },
     ...(userRole === 'admin' ? [{ name: 'Manage Users', icon: <Users size={20} />, path: '/admin/users' }] : []),
@@ -62,77 +69,91 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, closeSidebar, 
   ];
 
   const DesktopSidebar = (
-    <aside
-      aria-label="Sidebar Navigation"
-      className="hidden lg:flex flex-col w-64 shrink-0 border-r border-light-300 dark:border-dark-300 bg-light-100 dark:bg-dark-100 h-screen max-h-screen sticky top-0 overflow-hidden select-none justify-between z-30"
-    >
-      <div className="p-3.5 flex flex-col min-h-0">
-        <div className="mb-3 mt-1 flex items-center px-2 shrink-0">
-          <Logo />
+    <>
+      {/* Structural Spacer: preserves exact 256px in flex flow so <main> stays aligned */}
+      <div className="hidden lg:block w-64 shrink-0" aria-hidden="true" />
+
+      {/* Permanently fixed sidebar anchored directly to viewport left:0, top:0, bottom:0 */}
+      <aside
+        aria-label="Sidebar Navigation"
+        className="hidden lg:flex flex-col w-64 fixed top-0 left-0 bottom-0 border-r border-light-300 dark:border-dark-300 bg-light-100 dark:bg-dark-100 select-none justify-between z-40 overflow-hidden"
+      >
+        <div className="p-3.5 flex flex-col min-h-0 flex-1 overflow-y-auto">
+          <div className="mb-3 mt-1 flex items-center px-2 shrink-0">
+            <Logo />
+          </div>
+          
+          <div className="mb-3 shrink-0">
+            <Link
+              to="/write"
+              className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm py-2.5 px-4 rounded-full shadow-md hover:shadow-lg transition-all active:scale-98"
+            >
+              <Edit3 size={16} />
+              <span>Write</span>
+            </Link>
+          </div>
+          
+          <nav className="min-h-0">
+            <ul className="space-y-0.5">
+              {menuItems.map((item) => {
+                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                return (
+                  <li key={item.name}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center px-3.5 py-2 rounded-xl transition-colors font-medium text-sm ${
+                        isActive 
+                          ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-400 font-bold' 
+                          : 'text-dark-300 dark:text-light-300 hover:bg-light-200 dark:hover:bg-dark-200 hover:text-dark-100 dark:hover:text-light-100'
+                      }`}
+                    >
+                      <span className="mr-3 shrink-0">{item.icon}</span>
+                      <span className="truncate">{item.name}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
         </div>
         
-        <div className="mb-3 shrink-0">
-          <Link
-            to="/write"
-            className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm py-2.5 px-4 rounded-full shadow-md hover:shadow-lg transition-all active:scale-98"
-          >
-            <Edit3 size={16} />
-            <span>Write</span>
-          </Link>
+        {/* User Profile Area at Bottom */}
+        <div className="p-3 border-t border-light-300/80 dark:border-dark-300/80 shrink-0 bg-light-100 dark:bg-dark-100">
+          <div className="flex items-center justify-between group cursor-pointer p-1.5 rounded-xl hover:bg-light-200 dark:hover:bg-dark-200 transition-colors">
+            <Link 
+              to={user?.username ? `/@${user.username}` : '/profile'} 
+              className="flex items-center flex-1 overflow-hidden"
+            >
+              <img 
+                src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`} 
+                alt={user?.name || 'User'} 
+                className="w-9 h-9 rounded-full border border-light-300 dark:border-dark-300 shrink-0 object-cover"
+              />
+              <div className="ml-2.5 truncate">
+                <p className="text-xs font-bold text-dark-100 dark:text-light-100 truncate">{user?.name}</p>
+                <p className="text-[11px] text-dark-400 dark:text-light-400 truncate">@{user?.username}</p>
+              </div>
+            </Link>
+          </div>
+          <div className="flex justify-around items-center mt-1.5 pt-1.5 border-t border-light-200 dark:border-dark-300/50">
+            <button 
+              type="button"
+              onClick={toggleTheme} 
+              className="p-1.5 text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 rounded-lg hover:bg-light-200 dark:hover:bg-dark-200 transition-colors" 
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <Link to="/profile" className="p-1.5 text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 rounded-lg hover:bg-light-200 dark:hover:bg-dark-200 transition-colors" title="Settings">
+              <Settings size={16} />
+            </Link>
+            <button onClick={logoutUser} className="p-1.5 text-dark-400 hover:text-red-600 dark:text-light-400 dark:hover:text-red-400 rounded-lg hover:bg-light-200 dark:hover:bg-dark-200 transition-colors" title="Sign Out">
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
-        
-        <nav className="min-h-0 overflow-hidden">
-          <ul className="space-y-0.5">
-            {menuItems.map((item) => {
-              const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
-              return (
-                <li key={item.name}>
-                  <Link
-                    to={item.path}
-                    className={`flex items-center px-3.5 py-2 rounded-xl transition-colors font-medium text-sm ${
-                      isActive 
-                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-400 font-bold' 
-                        : 'text-dark-300 dark:text-light-300 hover:bg-light-200 dark:hover:bg-dark-200 hover:text-dark-100 dark:hover:text-light-100'
-                    }`}
-                  >
-                    <span className="mr-3 shrink-0">{item.icon}</span>
-                    <span className="truncate">{item.name}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      </div>
-      
-      {/* User Profile Area at Bottom */}
-      <div className="p-3 border-t border-light-300/80 dark:border-dark-300/80 shrink-0 bg-light-100 dark:bg-dark-100">
-        <div className="flex items-center justify-between group cursor-pointer p-1.5 rounded-xl hover:bg-light-200 dark:hover:bg-dark-200 transition-colors">
-          <Link 
-            to={user?.username ? `/@${user.username}` : '/profile'} 
-            className="flex items-center flex-1 overflow-hidden"
-          >
-            <img 
-              src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`} 
-              alt={user?.name || 'User'} 
-              className="w-9 h-9 rounded-full border border-light-300 dark:border-dark-300 shrink-0 object-cover"
-            />
-            <div className="ml-2.5 truncate">
-              <p className="text-xs font-bold text-dark-100 dark:text-light-100 truncate">{user?.name}</p>
-              <p className="text-[11px] text-dark-400 dark:text-light-400 truncate">@{user?.username}</p>
-            </div>
-          </Link>
-        </div>
-        <div className="flex justify-around mt-1.5 pt-1.5 border-t border-light-200 dark:border-dark-300/50">
-          <Link to="/profile" className="p-1.5 text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 rounded-lg hover:bg-light-200 dark:hover:bg-dark-200 transition-colors" title="Settings">
-            <Settings size={16} />
-          </Link>
-          <button onClick={logoutUser} className="p-1.5 text-dark-400 hover:text-red-600 dark:text-light-400 dark:hover:text-red-400 rounded-lg hover:bg-light-200 dark:hover:bg-dark-200 transition-colors" title="Sign Out">
-            <LogOut size={16} />
-          </button>
-        </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 
   const MobileSidebar = (

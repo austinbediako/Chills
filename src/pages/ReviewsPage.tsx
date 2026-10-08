@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
+import { useEscapeKey } from '../hooks/useKeyboardShortcuts';
 
 interface ModerationCategory {
   score: number;
@@ -100,6 +101,9 @@ const ReviewsPage: React.FC = () => {
   const [evaluatingId, setEvaluatingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [scanAlertModal, setScanAlertModal] = useState<ScanAlertModalData | null>(null);
+
+  // Global ESC key dismisses scan result alert modal
+  useEscapeKey(() => setScanAlertModal(null), !!scanAlertModal);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

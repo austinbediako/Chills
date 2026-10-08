@@ -117,10 +117,12 @@ const Authors: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-heading font-bold text-dark-100 dark:text-light-100 tracking-tight">
-                Manage Users
+                {currentUser?.role === 'admin' ? 'Manage Users' : 'Explore Authors'}
               </h1>
               <p className="text-sm text-dark-400 dark:text-light-400 mt-0.5">
-                Manage accounts, assign roles, and inspect author profiles across the platform.
+                {currentUser?.role === 'admin'
+                  ? 'Manage accounts, assign roles, and inspect author profiles across the platform.'
+                  : 'Discover writers, thinkers, and creators sharing ideas across the platform.'}
               </p>
             </div>
           </div>
@@ -324,31 +326,42 @@ const Authors: React.FC = () => {
                     <div className="flex items-center justify-between pt-1 border-t border-light-200 dark:border-dark-300/60 text-xs">
                       <div className="flex items-center gap-2">
                         <span className="text-dark-400 dark:text-light-400 text-xs font-mono">Role:</span>
-                        <select
-                          value={author.role || 'user'}
-                          disabled={updatingId === author._id || isCurrent}
-                          onChange={(e) => handleRoleChange(author._id, e.target.value)}
-                          aria-label={`Change role for ${author.name}`}
-                          className={`text-xs font-semibold px-2 py-1 rounded-full border cursor-pointer focus:outline-none ${getRoleBadge(
-                            author.role || 'user'
-                          )} disabled:opacity-75 disabled:cursor-not-allowed`}
-                        >
-                          <option value="user">User</option>
-                          <option value="author">Author</option>
-                          <option value="admin">Admin</option>
-                        </select>
+                        {currentUser?.role === 'admin' ? (
+                          <select
+                            value={author.role || 'user'}
+                            disabled={updatingId === author._id || isCurrent}
+                            onChange={(e) => handleRoleChange(author._id, e.target.value)}
+                            aria-label={`Change role for ${author.name}`}
+                            className={`text-xs font-semibold px-2 py-1 rounded-full border cursor-pointer focus:outline-none ${getRoleBadge(
+                              author.role || 'user'
+                            )} disabled:opacity-75 disabled:cursor-not-allowed`}
+                          >
+                            <option value="user">User</option>
+                            <option value="author">Author</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        ) : (
+                          <span
+                            className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${getRoleBadge(
+                              author.role || 'user'
+                            )}`}
+                          >
+                            {author.role || 'user'}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Link
                           to={profileUrl}
-                          className="p-1.5 rounded-lg text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 hover:bg-light-200 dark:hover:bg-dark-200"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 hover:bg-primary-100 transition-colors"
                           title="View Public Profile"
                         >
-                          <ExternalLink size={15} />
+                          <span>Profile</span>
+                          <ExternalLink size={13} />
                         </Link>
 
-                        {!isCurrent && (
+                        {currentUser?.role === 'admin' && !isCurrent && (
                           <button
                             onClick={() => handleToggleDeactivation(author)}
                             disabled={togglingStatusId === author._id}
@@ -440,26 +453,36 @@ const Authors: React.FC = () => {
                           {author.email || '—'}
                         </td>
 
-                        {/* Role Selector */}
+                        {/* Role Selector or Badge */}
                         <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={author.role || 'user'}
-                              disabled={updatingId === author._id || isCurrent}
-                              onChange={(e) => handleRoleChange(author._id, e.target.value)}
-                              aria-label={`Change role for ${author.name}`}
-                              className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all ${getRoleBadge(
+                          {currentUser?.role === 'admin' ? (
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={author.role || 'user'}
+                                disabled={updatingId === author._id || isCurrent}
+                                onChange={(e) => handleRoleChange(author._id, e.target.value)}
+                                aria-label={`Change role for ${author.name}`}
+                                className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all ${getRoleBadge(
+                                  author.role || 'user'
+                                )} disabled:opacity-75 disabled:cursor-not-allowed`}
+                              >
+                                <option value="user">User</option>
+                                <option value="author">Author</option>
+                                <option value="admin">Admin</option>
+                              </select>
+                              {updatingId === author._id && (
+                                <RefreshCw size={12} className="animate-spin text-primary-500" />
+                              )}
+                            </div>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border ${getRoleBadge(
                                 author.role || 'user'
-                              )} disabled:opacity-75 disabled:cursor-not-allowed`}
+                              )}`}
                             >
-                              <option value="user">User</option>
-                              <option value="author">Author</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                            {updatingId === author._id && (
-                              <RefreshCw size={12} className="animate-spin text-primary-500" />
-                            )}
-                          </div>
+                              {author.role || 'user'}
+                            </span>
+                          )}
                         </td>
 
                         {/* Account Status Badge */}
@@ -487,13 +510,14 @@ const Authors: React.FC = () => {
                           <div className="flex items-center justify-end gap-2">
                             <Link
                               to={profileUrl}
-                              className="p-1.5 rounded-lg text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 hover:bg-light-200 dark:hover:bg-dark-200 transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-dark-400 hover:text-dark-100 dark:text-light-400 dark:hover:text-light-100 hover:bg-light-200 dark:hover:bg-dark-200 transition-colors border border-light-300 dark:border-dark-300"
                               title="View Public Profile"
                             >
-                              <ExternalLink size={16} />
+                              <span>View Profile</span>
+                              <ExternalLink size={14} />
                             </Link>
 
-                            {!isCurrent && (
+                            {currentUser?.role === 'admin' && !isCurrent && (
                               <button
                                 onClick={() => handleToggleDeactivation(author)}
                                 disabled={togglingStatusId === author._id}
