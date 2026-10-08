@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, User as UserIcon, MessageSquare, Heart, Bookmark, ChevronRight, TrendingUp, Zap, Star, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -46,6 +46,7 @@ interface TagItem {
 
 const AuthenticatedHomePage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [featuredPosts, setFeaturedPosts] = useState<Article[]>([]);
   const [recentPosts, setRecentPosts] = useState<Article[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -305,7 +306,8 @@ const AuthenticatedHomePage: React.FC = () => {
               <motion.div
                 key={post._id}
                 variants={itemVariants}
-                className="card group flex flex-col justify-between"
+                onClick={() => navigate(`/blog/${post.slug}`)}
+                className="card group flex flex-col justify-between cursor-pointer"
               >
                 <div>
                   <div className="relative h-48 overflow-hidden">
@@ -318,6 +320,7 @@ const AuthenticatedHomePage: React.FC = () => {
                     {post.category && (
                       <Link
                         to={`/explore?category=${encodeURIComponent(post.category.name)}`}
+                        onClick={(e) => e.stopPropagation()}
                         className="absolute left-4 top-4 rounded-full bg-primary-600/90 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-primary-500"
                       >
                         {post.category.name}
@@ -325,7 +328,7 @@ const AuthenticatedHomePage: React.FC = () => {
                     )}
                   </div>
                   <div className="p-6">
-                    <Link to={`/blog/${post.slug}`}>
+                    <Link to={`/blog/${post.slug}`} onClick={(e) => e.stopPropagation()}>
                       <h3 className="mb-3 text-xl font-bold font-heading text-dark-100 dark:text-light-100 transition-colors group-hover:text-primary-600 dark:group-hover:text-primary-400 line-clamp-2">
                         {post.title}
                       </h3>
@@ -340,6 +343,7 @@ const AuthenticatedHomePage: React.FC = () => {
                   <div className="mb-4 flex items-center text-sm text-dark-400 dark:text-light-400">
                     <Link
                       to={`/authors/${post.author?.username || post.author?._id}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="flex items-center group/author hover:underline mr-4 truncate"
                     >
                       <img
@@ -357,6 +361,7 @@ const AuthenticatedHomePage: React.FC = () => {
                   <div className="flex items-center justify-between border-t border-light-300/60 dark:border-dark-300/60 pt-4">
                     <Link
                       to={`/blog/${post.slug}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="flex items-center text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
                     >
                       Read More <ChevronRight size={16} className="ml-1" />
@@ -364,6 +369,7 @@ const AuthenticatedHomePage: React.FC = () => {
                     <div className="flex items-center space-x-3 text-dark-400 dark:text-light-400">
                       <Link
                         to={`/blog/${post.slug}#comments`}
+                        onClick={(e) => e.stopPropagation()}
                         className="flex items-center text-xs hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                         title="Go to comments"
                       >
@@ -463,7 +469,8 @@ const AuthenticatedHomePage: React.FC = () => {
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35 }}
-                  className="card group flex flex-col md:flex-row overflow-hidden"
+                  onClick={() => navigate(`/blog/${post.slug}`)}
+                  className="card group flex flex-col md:flex-row overflow-hidden cursor-pointer"
                 >
                   <div className="relative h-48 w-full md:h-auto md:w-1/3 flex-shrink-0">
                     <img
@@ -475,6 +482,7 @@ const AuthenticatedHomePage: React.FC = () => {
                     {post.category && (
                       <Link
                         to={`/explore?category=${encodeURIComponent(post.category.name)}`}
+                        onClick={(e) => e.stopPropagation()}
                         className="absolute left-4 top-4 rounded-full bg-primary-600/90 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-primary-500"
                       >
                         {post.category.name}
@@ -483,7 +491,7 @@ const AuthenticatedHomePage: React.FC = () => {
                   </div>
                   <div className="flex flex-1 flex-col justify-between p-6">
                     <div>
-                      <Link to={`/blog/${post.slug}`}>
+                      <Link to={`/blog/${post.slug}`} onClick={(e) => e.stopPropagation()}>
                         <h3 className="mb-2 text-xl font-bold font-heading text-dark-100 dark:text-light-100 transition-colors group-hover:text-primary-600 dark:group-hover:text-primary-400 line-clamp-2">
                           {post.title}
                         </h3>
@@ -496,6 +504,7 @@ const AuthenticatedHomePage: React.FC = () => {
                       <div className="mb-2 flex items-center text-xs text-dark-400 dark:text-light-400 md:mb-0">
                         <Link
                           to={`/authors/${post.author?.username || post.author?._id}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center group/author hover:underline mr-3"
                         >
                           <img
@@ -513,6 +522,7 @@ const AuthenticatedHomePage: React.FC = () => {
                       <div className="flex items-center space-x-3 text-xs text-dark-400 dark:text-light-400">
                         <Link
                           to={`/blog/${post.slug}#comments`}
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                           title="Go to comments"
                         >

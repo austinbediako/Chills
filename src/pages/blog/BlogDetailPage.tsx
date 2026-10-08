@@ -3,6 +3,12 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, User, Heart, Bookmark, ChevronLeft, CheckCircle, XCircle, Repeat, CornerDownRight, Edit3 } from 'lucide-react';
 import axios from 'axios';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-dark.css';
+
+if (typeof window !== 'undefined') {
+  (window as any).hljs = hljs;
+}
 import { useSubmissions } from '../../hooks/useSubmissions';
 import { useComments } from '../../hooks/useComments';
 import { useAuth } from '../../hooks/useAuth';
@@ -66,6 +72,87 @@ const BlogDetailPage: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [location.hash, submission, loading]);
+
+  // Add copy functionality and syntax highlighting to code blocks
+  useEffect(() => {
+    if (!submission?.content) return;
+    
+    const timer = setTimeout(() => {
+      const article = document.querySelector('.kblog-article');
+      if (!article) return;
+      
+      const preElements = article.querySelectorAll('pre');
+      
+      preElements.forEach((pre) => {
+        if (pre.parentNode && (pre.parentNode as HTMLElement).classList.contains('code-block-wrapper')) return;
+        
+        let detectedLang = pre.dataset.language;
+        try {
+          if (!pre.classList.contains('hljs') && window.hljs) {
+            if (detectedLang) {
+              const result = window.hljs.highlight(pre.textContent || '', { language: detectedLang, ignoreIllegals: true });
+              pre.innerHTML = result.value;
+            } else {
+              const result = window.hljs.highlightAuto(pre.textContent || '');
+              pre.innerHTML = result.value;
+              detectedLang = result.language;
+            }
+            pre.classList.add('hljs');
+          }
+        } catch (err) {
+          console.warn('Syntax highlight error:', err);
+        }
+        
+        const displayLang = detectedLang || 'code';
+        
+        const wrapper = document.createElement('div');
+        // bg-[#282c34] is atom-one-dark background
+        wrapper.className = 'code-block-wrapper relative group my-2 sm:my-4 pt-9 bg-[#282c34] rounded-lg overflow-hidden shadow-sm';
+        
+        const topBar = document.createElement('div');
+        topBar.className = 'absolute top-0 left-0 right-0 h-9 bg-dark-300 flex items-center px-4 justify-between border-b border-dark-200 select-none';
+        
+        const langLabel = document.createElement('span');
+        langLabel.className = 'text-[10px] sm:text-xs font-mono font-bold text-light-400/80 uppercase tracking-wider';
+        langLabel.textContent = displayLang;
+        
+        topBar.appendChild(langLabel);
+        
+        pre.parentNode?.insertBefore(wrapper, pre);
+        wrapper.appendChild(topBar);
+        wrapper.appendChild(pre);
+        
+        // Ensure pre has padding and scrolls nicely
+        pre.className = (pre.className + ' p-4 overflow-x-auto text-sm text-light-100').trim();
+        
+        const btn = document.createElement('button');
+        btn.className = 'copy-code-btn flex items-center gap-1.5 px-2 py-1 bg-dark-200 hover:bg-primary-600 text-light-100 rounded text-[10px] font-bold transition-all opacity-70 hover:opacity-100 focus:opacity-100 z-10';
+        btn.title = 'Copy code';
+        btn.ariaLabel = 'Copy code';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> <span>Copy</span>';
+        
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const textToCopy = pre.textContent || '';
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Copied!</span>';
+            btn.classList.add('text-emerald-400', '!opacity-100');
+            setTimeout(() => {
+              btn.innerHTML = originalHTML;
+              btn.classList.remove('text-emerald-400', '!opacity-100');
+            }, 2000);
+          }).catch(err => console.error('Could not copy code:', err));
+        });
+        
+        topBar.appendChild(btn);
+      });
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [submission?.content]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {

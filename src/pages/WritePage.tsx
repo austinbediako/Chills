@@ -14,6 +14,8 @@ import { useSubmissions } from '../hooks/useSubmissions';
 import { useWritingShortcuts, useEscapeKey, getModifierKeyLabel } from '../hooks/useKeyboardShortcuts';
 import KeyboardShortcutsModal from '../components/common/KeyboardShortcutsModal';
 import '../styles/article.css';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-dark.css';
 
 // --- Register Quill modules and attributors ONCE at module scope ---
 
@@ -28,9 +30,10 @@ Quill.register(FloatStyle, true);
 Quill.register(MarginStyle, true);
 Quill.register(DisplayStyle, true);
 
-// Expose Quill on window for the image-resize module
+// Expose Quill and hljs on window for modules
 if (typeof window !== 'undefined') {
   (window as any).Quill = Quill;
+  (window as any).hljs = hljs;
 }
 Quill.register('modules/imageResize', ImageResize);
 
@@ -415,6 +418,7 @@ const WritePage: React.FC = () => {
         image: imageHandler
       }
     },
+    syntax: true,
     imageResize: {
       parchment: Parchment,
       modules: ['Resize', 'DisplaySize', 'Toolbar']

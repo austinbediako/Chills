@@ -29,11 +29,14 @@
 }
 
 /* Code blocks: allow horizontal scroll instead of breaking layout */
-.kblog-article pre {
-  overflow-x: auto;
-  max-width: 100%;
-  word-break: normal;
-  white-space: pre;
+.kblog-article pre,
+.kblog-article pre.ql-syntax {
+  overflow-x: auto !important;
+  max-width: 100% !important;
+  word-break: normal !important;
+  white-space: pre !important;
+  box-sizing: border-box !important;
+  border-radius: 0.5rem;
 }
 
 /* ---------------------------------------------------------------------------
@@ -110,10 +113,14 @@
 
 /* Paragraphs, headings, lists etc. flow naturally around floated images.
    Do NOT set overflow:hidden on p — that creates a BFC which prevents wrapping. */
-.kblog-article blockquote,
-.kblog-article pre {
+.kblog-article blockquote {
   overflow: hidden; /* these elements contain their own formatting */
   clear: both;
+}
+
+.kblog-article pre {
+  clear: both;
+  overflow-x: auto !important; /* ensure it scrolls instead of expanding */
 }
 
 /* ---------------------------------------------------------------------------

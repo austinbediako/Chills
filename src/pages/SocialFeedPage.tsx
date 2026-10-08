@@ -735,7 +735,8 @@ export const SocialFeedPage: React.FC = () => {
                   return (
                     <article
                       key={item._id}
-                      className="p-4 sm:p-5 hover:bg-light-200/25 dark:hover:bg-dark-200/25 transition-colors"
+                      onClick={() => navigate(`/blog/${s.slug}`)}
+                      className="p-4 sm:p-5 hover:bg-light-200/25 dark:hover:bg-dark-200/25 transition-colors cursor-pointer"
                     >
                       {/* Repost Header if this item is a repost */}
                       {isRepost && item.repostUser && (
@@ -743,6 +744,7 @@ export const SocialFeedPage: React.FC = () => {
                           <Repeat size={13} className="shrink-0" />
                           <Link
                             to={`/@${item.repostUser.username}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="hover:underline flex items-center gap-1"
                           >
                             <span>{item.repostUser.name}</span>
@@ -767,7 +769,7 @@ export const SocialFeedPage: React.FC = () => {
                       <div className="flex gap-3.5">
                         {/* Author Avatar Column */}
                         <div className="shrink-0">
-                          <Link to={`/@${s.author?.username}`}>
+                          <Link to={`/@${s.author?.username}`} onClick={(e) => e.stopPropagation()}>
                             <img
                               src={s.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.author?.name || 'Author')}`}
                               alt={s.author?.name}
@@ -783,12 +785,14 @@ export const SocialFeedPage: React.FC = () => {
                             <div className="flex items-center gap-1.5 min-w-0">
                               <Link
                                 to={`/@${s.author?.username}`}
+                                onClick={(e) => e.stopPropagation()}
                                 className="font-bold text-sm text-dark-100 dark:text-light-100 hover:underline truncate"
                               >
                                 {s.author?.name}
                               </Link>
                               <Link
                                 to={`/@${s.author?.username}`}
+                                onClick={(e) => e.stopPropagation()}
                                 className="text-xs text-dark-400 dark:text-light-400 truncate"
                               >
                                 @{s.author?.username}
@@ -810,7 +814,7 @@ export const SocialFeedPage: React.FC = () => {
                             {/* 1-Click Follow button if not self */}
                             {user?._id !== s.author?._id && (
                               <button
-                                onClick={() => handleToggleFollow(s.author._id, s.author.username)}
+                                onClick={(e) => { e.stopPropagation(); handleToggleFollow(s.author._id, s.author.username); }}
                                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                                   item.isFollowingAuthor || followingAuthorIds.has(s.author._id)
                                     ? 'border border-light-300 dark:border-dark-300 text-dark-300 dark:text-light-300 hover:border-red-500 hover:text-red-500'
@@ -825,7 +829,7 @@ export const SocialFeedPage: React.FC = () => {
                           </div>
 
                           {/* Story Title & Abstract */}
-                          <Link to={`/blog/${s.slug}`} className="block group">
+                          <Link to={`/blog/${s.slug}`} onClick={(e) => e.stopPropagation()} className="block group">
                             <h2 className="text-base sm:text-lg font-bold font-heading text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors leading-snug mb-1.5">
                               {s.title}
                             </h2>
@@ -836,7 +840,7 @@ export const SocialFeedPage: React.FC = () => {
 
                           {/* Cover Image Preview */}
                           {s.image && (
-                            <Link to={`/blog/${s.slug}`} className="block mb-3.5 rounded-2xl overflow-hidden border border-light-300/80 dark:border-dark-300/80 max-h-80 group">
+                            <Link to={`/blog/${s.slug}`} onClick={(e) => e.stopPropagation()} className="block mb-3.5 rounded-2xl overflow-hidden border border-light-300/80 dark:border-dark-300/80 max-h-80 group">
                               <img
                                 src={s.image}
                                 alt={s.title}
@@ -852,6 +856,7 @@ export const SocialFeedPage: React.FC = () => {
                                 <Link
                                   key={idx}
                                   to={`/explore?tag=${encodeURIComponent(tag)}`}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline"
                                 >
                                   #{tag}
@@ -870,6 +875,7 @@ export const SocialFeedPage: React.FC = () => {
                             {/* Comment / Reply button */}
                             <Link
                               to={`/blog/${s.slug}#comments`}
+                              onClick={(e) => e.stopPropagation()}
                               className="flex items-center gap-1.5 text-xs font-semibold hover:text-sky-500 transition-colors group p-1.5 rounded-full hover:bg-sky-50 dark:hover:bg-sky-950/30"
                               title="Go straight to comments"
                             >
@@ -879,7 +885,7 @@ export const SocialFeedPage: React.FC = () => {
 
                             {/* Repost button */}
                             <button
-                              onClick={() => handleToggleRepost(item)}
+                              onClick={(e) => { e.stopPropagation(); handleToggleRepost(item); }}
                               className={`flex items-center gap-1.5 text-xs font-semibold transition-colors group p-1.5 rounded-full ${
                                 item.isReposted
                                   ? 'text-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30'
@@ -898,7 +904,7 @@ export const SocialFeedPage: React.FC = () => {
 
                             {/* Like button */}
                             <button
-                              onClick={() => handleLikeStory(s._id)}
+                              onClick={(e) => { e.stopPropagation(); handleLikeStory(s._id); }}
                               className={`flex items-center gap-1.5 text-xs font-semibold transition-colors group p-1.5 rounded-full ${
                                 item.isLiked
                                   ? 'text-rose-500 hover:text-rose-600 bg-rose-50/50 dark:bg-rose-950/30'
@@ -917,25 +923,27 @@ export const SocialFeedPage: React.FC = () => {
                             </button>
 
                             {/* Bookmark Dropdown */}
-                            <BookmarkDropdown
-                              submissionId={s._id}
-                              isBookmarked={item.isBookmarked}
-                              initialFolder={(item as any).bookmarkFolder}
-                              onBookmarkChange={(isBm, folder) => {
-                                setFeedItems((prev) =>
-                                  prev.map((f) =>
-                                    f.submission._id === s._id
-                                      ? { ...f, isBookmarked: isBm, bookmarkFolder: folder }
-                                      : f
-                                  )
-                                );
-                              }}
-                              size={16}
-                            />
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <BookmarkDropdown
+                                submissionId={s._id}
+                                isBookmarked={item.isBookmarked}
+                                initialFolder={(item as any).bookmarkFolder}
+                                onBookmarkChange={(isBm, folder) => {
+                                  setFeedItems((prev) =>
+                                    prev.map((f) =>
+                                      f.submission._id === s._id
+                                        ? { ...f, isBookmarked: isBm, bookmarkFolder: folder }
+                                        : f
+                                    )
+                                  );
+                                }}
+                                size={16}
+                              />
+                            </div>
 
                             {/* Share link button */}
                             <button
-                              onClick={() => handleSharePost(s.slug)}
+                              onClick={(e) => { e.stopPropagation(); handleSharePost(s.slug); }}
                               className="p-1.5 rounded-full hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-950/30 transition-colors"
                               title="Share story link"
                             >

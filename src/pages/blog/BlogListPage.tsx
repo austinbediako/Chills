@@ -1277,6 +1277,7 @@ const StoryCard: React.FC<StoryCardProps> = ({
   onRepost,
   onLike,
 }) => {
+  const navigate = useNavigate();
   const authorName = sub.author?.name || 'Author';
   const authorHandle = sub.author?.username || 'writer';
   const authorAvatar =
@@ -1287,10 +1288,13 @@ const StoryCard: React.FC<StoryCardProps> = ({
   const currentComments = sub.commentsCount ?? (Array.isArray(sub.comments) ? sub.comments.length : 0);
 
   return (
-    <article className="p-4 sm:p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/20 transition-colors border-b border-light-300 dark:border-dark-300">
+    <article 
+      onClick={() => navigate(`/blog/${sub.slug}`)}
+      className="p-4 sm:p-5 hover:bg-light-200/30 dark:hover:bg-dark-200/20 transition-colors border-b border-light-300 dark:border-dark-300 cursor-pointer"
+    >
       <div className="flex items-start gap-3.5">
         {/* Author Avatar */}
-        <Link to={`/@${authorHandle}`} className="shrink-0 group">
+        <Link to={`/@${authorHandle}`} onClick={(e) => e.stopPropagation()} className="shrink-0 group">
           <img
             src={authorAvatar}
             alt={authorName}
@@ -1305,12 +1309,14 @@ const StoryCard: React.FC<StoryCardProps> = ({
             <div className="flex items-baseline gap-2 truncate">
               <Link
                 to={`/@${authorHandle}`}
+                onClick={(e) => e.stopPropagation()}
                 className="font-bold text-sm text-dark-100 dark:text-light-100 hover:underline truncate"
               >
                 {authorName}
               </Link>
               <Link
                 to={`/@${authorHandle}`}
+                onClick={(e) => e.stopPropagation()}
                 className="text-xs text-dark-400 dark:text-light-400 truncate"
               >
                 @{authorHandle}
@@ -1332,7 +1338,7 @@ const StoryCard: React.FC<StoryCardProps> = ({
           </div>
 
           {/* Title & Abstract */}
-          <Link to={`/blog/${sub.slug}`} className="block mt-1.5 group">
+          <Link to={`/blog/${sub.slug}`} onClick={(e) => e.stopPropagation()} className="block mt-1.5 group">
             <h3 className="text-base sm:text-lg font-bold font-heading text-dark-100 dark:text-light-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors leading-snug">
               {sub.title}
             </h3>
@@ -1345,7 +1351,7 @@ const StoryCard: React.FC<StoryCardProps> = ({
 
           {/* Media Image if available */}
           {sub.image && (
-            <Link to={`/blog/${sub.slug}`} className="block mt-3 rounded-2xl overflow-hidden border border-light-300 dark:border-dark-300">
+            <Link to={`/blog/${sub.slug}`} onClick={(e) => e.stopPropagation()} className="block mt-3 rounded-2xl overflow-hidden border border-light-300 dark:border-dark-300">
               <img
                 src={sub.image}
                 alt={sub.title}
@@ -1359,6 +1365,7 @@ const StoryCard: React.FC<StoryCardProps> = ({
             {/* Comments */}
             <Link
               to={`/blog/${sub.slug}#comments`}
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1.5 hover:text-primary-600 dark:hover:text-primary-400 transition-colors group p-1.5 rounded-full hover:bg-primary-50 dark:hover:bg-primary-950/30"
               title="Comments"
             >
@@ -1368,7 +1375,7 @@ const StoryCard: React.FC<StoryCardProps> = ({
 
             {/* Repost */}
             <button
-              onClick={onRepost}
+              onClick={(e) => { e.stopPropagation(); onRepost(); }}
               className={`flex items-center gap-1.5 transition-colors p-1.5 rounded-full ${
                 isReposted
                   ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 font-semibold'
@@ -1382,7 +1389,7 @@ const StoryCard: React.FC<StoryCardProps> = ({
 
             {/* Like */}
             <button
-              onClick={onLike}
+              onClick={(e) => { e.stopPropagation(); onLike(); }}
               className={`flex items-center gap-1.5 transition-colors p-1.5 rounded-full ${
                 isLiked
                   ? 'text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/30 font-semibold'
@@ -1395,12 +1402,14 @@ const StoryCard: React.FC<StoryCardProps> = ({
             </button>
 
             {/* Bookmark with Dropdown */}
-            <BookmarkDropdown
-              submissionId={sub._id}
-              isBookmarked={false}
-              size={16}
-              showLabel={false}
-            />
+            <div onClick={(e) => e.stopPropagation()}>
+              <BookmarkDropdown
+                submissionId={sub._id}
+                isBookmarked={false}
+                size={16}
+                showLabel={false}
+              />
+            </div>
           </div>
         </div>
       </div>
